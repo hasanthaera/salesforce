@@ -1,0 +1,147 @@
+<apex:page standardController="TH1__Rule__c" extensions="TH1.RULE_CE_Rule" action="{!initPage}" sidebar="false" tabstyle="Interaction_Rules__tab">
+<c:COMMON_JQueryLib />
+<c:COMMON_JQueryUILib />
+<c:COMMON_Mask />
+<apex:includeScript value="//cdn.jsdelivr.net/jquery.multiselect/1.13/jquery.multiselect.min.js"/>
+<apex:stylesheet value="//cdn.jsdelivr.net/jquery.multiselect/1.13/jquery.multiselect.css"/>
+
+<apex:pageMessage summary="{!ConnectFeatureMessage}" severity="info" strength="3" rendered="{!NOT(ConnectIsLicensed)}" escape="false" />
+<apex:form rendered="{!ConnectIsLicensed}">
+<apex:sectionHeader title="Interaction Rule" subtitle="{!if(TH1__Rule__c.Id == null, 'New', TH1__Rule__c.Name)}"/>
+<!-- Replicate SF help for this page link and icon -->
+<div class="bPageTitle">
+	<div class="ptBody">
+		<c:COMMON_PageHelpLink helpUrlPath="index.htm#InteractionRulesPage.htm" showText="true"/>
+	</div>
+</div>
+<apex:actionFunction action="{!changeField}" name="changeField" rerender="criteria"/>
+
+<apex:pageMessages id="messages"/>
+
+<apex:pageBlock mode="edit">
+    <apex:pageBlockButtons >
+        <apex:commandButton value="Save" action="{!save}"/>
+        <apex:commandButton value="Cancel" action="{!URLFOR($Page.RULE_Rules)}" immediate="true" />
+    </apex:pageBlockButtons>
+    
+    <apex:pageBlockSection id="rule" title="Rule" collapsible="false" columns="1">
+		<apex:pageBlockSectionItem >
+			<apex:outputLabel value="Rule Name"/>
+		    <apex:outputPanel layout="block" styleClass="requiredInput">
+	        	<div class="requiredBlock"></div>
+	            <apex:inputText value="{!rule.Name}"/>
+		    </apex:outputPanel>
+	    </apex:pageBlockSectionItem>
+		<apex:pageBlockSectionItem >
+			<apex:outputLabel value="Object"/>
+			<apex:outputPanel layout="block" styleClass="requiredInput">
+                <div class="requiredBlock"></div>
+                <apex:selectList value="{!rule.TH1__Object_Name__c}" size="1">
+                	<apex:selectOption itemValue="" itemLabel="--None--"/>
+					<apex:selectOptions value="{!objectOptions}"/>
+					<apex:actionSupport event="onchange" action="{!changeObject}" rerender="rule, criteria, fields" onSubmit="showMask()" onComplete="hideMask()"/>
+                </apex:selectList>
+            </apex:outputPanel>
+		</apex:pageBlockSectionItem>
+		<apex:pageBlockSectionItem rendered="{!rule.TH1__Object_Name__c != null}">
+			<apex:outputLabel value="Customer Key Id Field"/>
+			<apex:outputPanel layout="block" styleClass="requiredInput">
+                <div class="requiredBlock"></div>
+                <apex:selectList value="{!rule.TH1__Customer_Key_Id_Field__c}" size="1">
+                	<apex:selectOption itemValue="" itemLabel="--None--"/>
+					<apex:selectOptions value="{!recordIdFieldOptions}"/>
+                </apex:selectList>
+            </apex:outputPanel>
+		</apex:pageBlockSectionItem>
+    </apex:pageBlockSection>
+    
+    <apex:pageBlockSection id="criteria" title="Criteria" collapsible="false" columns="1">
+    	<apex:outputPanel rendered="{!ruleCriterionWrappers.size > 0}">
+	    	<table>
+	    		<tr>
+	    			<td></td>
+	    			<td><b>Field</b></td>
+	    			<td><b>Operator</b></td>
+	    			<td><b>Value</b></td>
+	    		</tr>
+	    		
+	    		<apex:variable var="currentIndex" value="{!1}"/>
+				
+				<apex:repeat value="{!ruleCriterionWrappers}" var="wrapper">
+					<tr>
+						<td>
+							<apex:commandButton value="X" action="{!removeCriterion}" rerender="criteria" onclick="showMask()" oncomplete="init()">
+								<apex:param name="criterionIndex" assignTo="{!criterionIndex}" value="{!currentIndex - 1}"/>
+							</apex:commandButton>
+						</td>
+						<td>
+							<apex:selectList value="{!wrapper.ruleCriterion.TH1__Field_Name__c}" size="1" styleClass="fieldSelect"><!-- onchange="selectField(this, {!currentIndex - 1});"-->
+								<apex:selectOption itemValue="" itemLabel="--None--"/>
+								<apex:selectOptions value="{!fieldOptions}"/>
+								<apex:actionSupport event="onchange" action="{!wrapper.changeField}" rerender="criteria" onSubmit="showMask()" onComplete="init();"/>
+							</apex:selectList>
+						</td>
+						<td>
+							<apex:selectList value="{!wrapper.ruleCriterion.TH1__Operator__c}" size="1" styleClass="operatorSelect" disabled="{!wrapper.ruleCriterion.TH1__Field_Name__c == null}">
+								<apex:selectOption itemValue="" itemLabel="--None--"/>
+								<apex:selectOptions value="{!wrapper.operatorOptions}"/>
+								<!--apex:selectOptions value="{!operatorOptions}"/-->
+							</apex:selectList>
+						</td>
+						<td>
+							<apex:inputField value="{!wrapper.record[wrapper.ruleCriterion.TH1__Field_Name__c]}" rendered="{!wrapper.ruleCriterion.TH1__Field_Name__c != null && fieldTypes[wrapper.ruleCriterion.TH1__Field_Name__c] == 'REFERENCE'}" required="false" />
+							<apex:inputText value="{!wrapper.ruleCriterion.TH1__Values__c}" rendered="{!wrapper.ruleCriterion.TH1__Field_Name__c == null || fieldTypes[wrapper.ruleCriterion.TH1__Field_Name__c] != 'REFERENCE' && fieldTypes[wrapper.ruleCriterion.TH1__Field_Name__c] != 'PICKLIST'}" disabled="{!wrapper.ruleCriterion.TH1__Field_Name__c == null}"/>
+							<apex:selectList value="{!wrapper.picklistValues}" multiselect="true" styleClass="multiselect_picklist" rendered="{!wrapper.ruleCriterion.TH1__Field_Name__c != null && fieldTypes[wrapper.ruleCriterion.TH1__Field_Name__c] == 'PICKLIST'}">
+								<apex:selectOptions value="{!wrapper.picklistOptions}"/>
+							</apex:selectList>
+						</td>
+						<td>{!IF(currentIndex < ruleCriterionWrappers.size, 'AND', '')}</td>
+					</tr>
+					
+					<!-- Increment index. -->
+					<apex:variable var="currentIndex" value="{!currentIndex + 1}"/>
+				</apex:repeat>
+	    		
+	    		<tr>
+	    			<td></td>
+	    			<td><apex:commandButton value="Add Row" action="{!addCriterionRow}" rerender="criteria"/></td>
+	    		</tr>
+	    	</table>
+	    </apex:outputPanel>
+    </apex:pageBlockSection>
+    
+    <apex:pageBlockSection id="fields" title="Fields" collapsible="false" columns="1">
+    	<apex:outputPanel >
+    		<table>
+	    		<tr>
+	    			<apex:repeat value="{!fields2}" var="columnFields">
+		    			<td>
+					    	<apex:repeat value="{!columnFields}" var="field">
+				    			<apex:inputCheckbox value="{!field.selected}"/> <label title="{!field.name}">{!field.label}</label><br/>
+					    	</apex:repeat>
+					    </td>
+					    <td width="35">&nbsp;</td>
+					</apex:repeat>
+				 </tr>
+			</table>
+	    </apex:outputPanel>
+    </apex:pageBlockSection>
+</apex:pageBlock>
+
+</apex:form>
+
+<script>
+	function init(){
+		$('.multiselect_picklist').multiselect({
+			minWidth: 400,
+			noneSelectedText: 'Please select',
+			selectedList: 2
+		});
+		hideMask();
+	}
+	$(document).ready(function() {
+		init();
+	});
+</script>
+
+</apex:page>

@@ -1,0 +1,19 @@
+<apex:page sidebar="false" showHeader="false">
+	<apex:includeScript value="/support/console/26.0/integration.js"/>
+	<script type="text/javascript">
+		window.onload = function() {
+		   parent.Thunderhead.SF.require('document-processor', 'browser').done(function(DocumentProcessor, Browser) {
+		      var urlParams = Browser.getUrlParams();
+		      var isConsole = urlParams.console === 'true';
+		      if (isConsole) {
+		      	document.getElementById('docusign_finish').style.display = 'none';
+		      }
+		      DocumentProcessor.complete();
+		   });
+		};
+	</script>
+	<div align="center" id="docusign_finish">
+		<apex:image value="{!URLFOR($Resource.TH1__ThunderheadResources, '/images/' + $Setup.Application_Custom_Settings__c.Logo__c)}" styleclass="oc_logo"/>
+	   	<div class="spinner"><img src="/img/loading.gif" width="15" height="15"/></div>
+    </div>
+</apex:page>

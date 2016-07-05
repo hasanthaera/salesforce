@@ -1,0 +1,5 @@
+<apex:page showHeader="true" sidebar="false" controller="TH1.DOCGEN_CO_ShowPDF">
+	<apex:form >
+		<apex:outputLabel >Deprecated!</apex:outputLabel>
+	</apex:form>
+</apex:page>

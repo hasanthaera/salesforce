@@ -1,0 +1,51 @@
+<apex:page controller="TH1.RULE_CO_Rules" action="{!initPage}" sidebar="false" tabstyle="Interaction_Rules__tab">
+<apex:pageMessage summary="{!ConnectFeatureMessage}" severity="info" strength="3" rendered="{!NOT(ConnectIsLicensed)}" escape="false" />
+<apex:form rendered="{!ConnectIsLicensed}">
+<apex:sectionHeader title="Thunderhead for Salesforce" subtitle="Interaction Rules"/>
+<apex:pageMessages id="messages"/>
+<!-- Replicate SF help for this page link and icon -->
+<div class="bPageTitle">
+	<div class="ptBody">
+		<c:COMMON_PageHelpLink helpUrlPath="index.htm#InteractionRulesPage.htm" showText="true"/>
+	</div>
+</div>
+<apex:pageBlock id="rules">
+    <apex:pageBlockButtons >
+        <apex:commandButton value="New Rule" action="{!URLFOR($Page.RULE_Rule)}"/>
+    </apex:pageBlockButtons>
+
+	<apex:variable var="currentIndex" value="{!0}"/>
+
+	<apex:pageblocktable value="{!ruleWrappers}" var="wrapper">
+		<apex:column headerValue="Action">
+			<a href="{!$Page.RULE_View}?id={!wrapper.rule.Id}">View</a>
+			|&nbsp;
+			<a href="{!$Page.RULE_Rule}?id={!wrapper.rule.Id}">Edit</a>
+			<apex:outputPanel rendered="{!wrapper.userRecordAccess.HasDeleteAccess}">
+				|&nbsp;
+				<apex:commandLink value="Del" action="{!deleteRule}" onclick="if(!confirm('Are you sure you want to delete this Rule?')) return false;" status="status" rerender="messages, rules">
+					<apex:param name="ruleWrapperIndex" assignTo="{!ruleWrapperIndex}" value="{!currentIndex}"/>
+				</apex:commandLink>
+			</apex:outputPanel>
+			<!-- Increment index each time through the pageblock table. -->
+ 			<apex:variable var="currentIndex" value="{!currentIndex + 1}"/>
+		</apex:column>
+		<apex:column headerValue="Name" value="{!wrapper.rule.Name}"/>
+		<apex:column headerValue="Object" value="{!wrapper.rule.TH1__Object_Name__c}"/>
+		<apex:column headerValue="Criteria">
+			<apex:outputPanel >
+				<apex:repeat value="{!wrapper.rule.Rule_Criteria__r}" var="criterion">
+					(<span style="font-size: 105%; font-family: 'Courier New','Courier',mono;">{!criterion.TH1__Field_Name__c}</span>
+					<span style="font-size: 80%; text-transform: uppercase; padding: .5em;">{!criterion.TH1__Operator__c}</span>
+					<span style="">{!criterion.TH1__Values__c}</span>)
+				</apex:repeat>
+			</apex:outputPanel>
+		</apex:column>
+		<apex:column headerValue="Fields" value="{!wrapper.fieldNames}"/>
+		<apex:column value="{!wrapper.rule.LastModifiedById}"/>
+	</apex:pageblocktable>
+</apex:pageBlock>
+
+</apex:form>
+
+</apex:page>

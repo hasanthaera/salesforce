@@ -1,0 +1,42 @@
+<apex:page >
+	<apex:includeScript value="/support/console/26.0/integration.js"/>
+	<apex:form >
+		<div class="centre">
+			<apex:image value="{!URLFOR($Resource.TH1__ThunderheadResources, 'images/' + $Setup.Application_Custom_Settings__c.Logo__c)}" styleClass="oc_logo"/>
+			<br/><br/>
+			<div>Document generation completed.</div>
+		</div>
+		<apex:pageMessages />
+		
+		<script type="text/javascript">
+		    var existingOnLoad = window.onload;
+			window.onload = function(){
+				sforce.console.refreshSubtabById('{!JSENCODE($CurrentPage.parameters.consoleTabId)}', false);
+				var t=setTimeout(function(){
+					var closeSubtab = function closeSubtab(result) {
+						var tabId = result.id;
+						sforce.console.closeTab(tabId);
+					};
+					sforce.console.getEnclosingTabId(closeSubtab);
+				}, 3000)
+				if (existingOnLoad) {
+					existingOnLoad();
+				}
+			};
+	    </script>
+		
+	</apex:form>
+	<style type="text/css">
+		.centre{
+			display: block;
+			position: absolute;
+			top: 30%;
+			left: 40%;
+			font-weight:bold;
+			//margin: 20px;
+		}
+		.oc_logo{
+			padding-left: 30px;
+		}
+	</style>
+</apex:page>

@@ -1,0 +1,88 @@
+<apex:page sidebar="false" tabStyle="Dashboard__tab">
+    <c:COMMON_JQueryLib />
+    <c:COMMON_MustacheLib />
+    <c:COMMON_StaticPageMessage MessageId="notice" Severity="error"/>
+    <script type="text/javascript">
+        (function() {
+            var pageMessage;
+
+            var messageGeneratorMap = {
+                unsupported_browser: unsupportedBrowser
+            }
+
+            function unsupportedBrowser() {
+                var detail = getTemplate('unsupported-browser_tmpl');
+                return {
+                    summary: 'Unsupported Browser',
+                    detail: detail
+                }
+            }
+
+            function getTemplate(id) {
+                return $('#' + id).html();
+            }
+
+            function getMessageGenerator(type) {
+                return messageGeneratorMap[type] || function() {
+                        return {
+                            summary: 'There was a problem',
+                            detail: 'Contact Thunderhead.com support'
+                        }};
+            }
+
+            function renderNotice() {
+                var message = getMessageGenerator(getType()).call(this);
+                var summary = Mustache.render(getTemplate('message-summary_tmpl'), message);
+                var detail = Mustache.render(getTemplate('message-detail_tmpl'), message);
+                pageMessage.setSummary(summary);
+                pageMessage.setDetail(detail);
+            }
+
+            function getType() {
+                return getParameterByName('type');
+            }
+
+            // TODO:pjfh put in lib
+            function getParameterByName(name) {
+                name = name.replace(/[\[]/, "\\\[").replace(/[\]]/, "\\\]");
+                var regex = new RegExp("[\\?&]" + name + "=([^&#]*)"),
+                results = regex.exec(location.search);
+                return results == null ? "" : decodeURIComponent(results[1].replace(/\+/g, " "));
+            }
+
+            $(function() {
+                pageMessage = new window.Thunderhead.SF.PageMessage('notice');
+                renderNotice();
+            });
+        }).call(this);
+    </script>
+
+    <style>
+        .message-notice {
+        }
+        .message-notice .summary {
+        }
+        .message-notice .detail {
+        }
+        .message-notice .detail .wrapper {
+            margin-top:10px;
+        }
+    </style>
+
+	<script type="text/template" id="message-summary_tmpl">
+        <h1>{{{summary}}}</h1>
+    </script>
+
+    <script type="text/template" id="message-detail_tmpl">
+        <div class="wrapper">{{{detail}}}</h1>
+    </script>
+
+    <script type="text/template" id="unsupported-browser_tmpl">
+        <p>The version of the browser that you are currently using is not supported by <span><apex:outputText value="{!JSENCODE($Setup.Application_Custom_Settings__c.Application_Name__c)}"/></span> for Salesforce.</p>
+        <p>We currently support  Internet Explorer 8, Internet Explorer 9, Internet Explorer 10, Google Chrome (Windows), and Google Chrome (Mac).
+            We do support Internet Explorer 8, but it may impair your user experience when working with larger document sizes.
+            For the best possible experience using our products, we recommend that you upgrade to the latest version.</p>
+        <p>Rest assured we're working hard to provide support for other browsers, and we'll announce this very soon.</p>
+    </script>
+
+</apex:page>

@@ -1,0 +1,68 @@
+<!--*********************************************************************
+ 	* Description      : Final Assignment Page 
+ 	* @author          : Hasantha Liyanage
+ 	* @since           : June 14, 2013  
+ 	* Copyright 2011 ABSI. All rights reserved. 
+	*********************************************************************-->
+<apex:page standardStylesheets="true" showHeader="false" standardController="FAEmployee__c" extensions="FinalAssignmentController"  tabStyle="Account">
+	<apex:stylesheet value="{!URLFOR($Resource.resource1, 'Resources/css/styles.css')}" />
+	<apex:panelGrid columns="2" id="theGrid" style="progress">
+		<apex:image url="{!URLFOR($Resource.resource1, 'Resources/img/icon.png')}" width="50" height="50" /> 
+		<apex:sectionHeader title="My Final Assignment" />
+	</apex:panelGrid>
+	<apex:form >
+		<apex:pageBlock id="empDetBlk">
+			<apex:pageBlockSection columns="3">
+				<apex:outputLabel value="BIR #" />
+				<apex:outputPanel styleClass="requiredInput" layout="block">
+				<apex:outputPanel styleClass="requiredBlock" layout="block" />
+					<apex:inputText label="BIR #" value="{!searchBIR}" />
+				</apex:outputPanel> 
+				<apex:actionStatus startText="(...)" id="progressStatusMenu1" onStart="document.body.style.cursor = 'wait'; return true;" onStop="document.body.style.cursor = 'default'; return true;">
+					<apex:facet name="start">
+						<center>
+							<img src="{!URLFOR($Resource.resource1, 'Resources/img/ajax-loader.gif')}" border="0"  alt="Loading..." />
+						</center> 
+					</apex:facet>
+					<apex:facet name="stop">&nbsp;</apex:facet>
+				</apex:actionStatus>
+				<apex:outputLabel value="IPN #" />
+				<apex:outputPanel styleClass="requiredInput" layout="block">
+				<apex:outputPanel styleClass="requiredBlock" layout="block" />
+					<apex:inputText label="IPN #" value="{!searchIPN}" />
+				</apex:outputPanel>
+				<apex:commandButton action="{!validate}" value="Validate" rerender="empDetBlk" status="progressStatusMenu1" style="width:100px" /> 
+			</apex:pageBlockSection>
+			<apex:pageMessages id="headerMessages" showDetail="false" /> 
+			<apex:pageBlockSection columns="1" rendered="{!bolshowDetail}" title="Employee Details">
+				<apex:inputText value="{!employee.Employee_Name__c}" id="idName" disabled="true" />  
+					<apex:pageblockSectionItem >  
+						<apex:outputLabel value="Country" />              
+		                <apex:selectList size="1" value="{!country}">
+							<apex:selectOption itemValue="none" itemLabel="--NONE--" />
+							<apex:selectOptions value="{!Countries}" />
+							<apex:actionSupport event="onchange" reRender="city" />
+						</apex:selectList>                
+					</apex:pageblockSectionItem>
+					<apex:pageblockSectionItem >
+						<apex:outputLabel value="City"/>
+						<apex:selectList size="1" value="{!city}" id="city">
+							<apex:selectOption itemValue="none" itemLabel="--NONE--" />
+							<apex:selectOptions value="{!cities}" />
+						</apex:selectList>
+					</apex:pageblockSectionItem> 
+			</apex:pageBlockSection>
+			<apex:pageBlockSection columns="3" rendered="{!bolshowDetail}" title="Barcode Details" id="barcode">
+				<apex:outputLabel value="Barcode" />
+				<apex:outputPanel styleClass="requiredInput" layout="block">
+				<apex:outputPanel styleClass="requiredBlock" layout="block" />
+					<apex:inputTextarea label="Barcode" rows="8" cols="100" value="{!barcode}" />
+				</apex:outputPanel> 
+				<apex:panelGrid columns="2" id="theGrid" style="progress">
+					<apex:commandButton action="{!clearBarcodes}" value="Clear" rerender="empDetBlk" status="progressStatusMenu1" style="width:100px" />  
+					<apex:commandButton action="{!saveBarcodes}" value="Save" rerender="empDetBlk" status="progressStatusMenu1" style="width:100px" />
+				</apex:panelGrid>
+			</apex:pageBlockSection>
+		</apex:pageBlock>
+	</apex:form>
+</apex:page>

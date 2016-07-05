@@ -1,0 +1,28 @@
+<apex:page showHeader="false" standardController="Customer__c" extensions="CustomerProjectManagementController" tabStyle="Account"  >
+<apex:sectionHeader title="Managing Customer - Project " />
+<apex:image url="{!$Resource.icon}" width="50" height="50"/>  
+    <apex:form >
+     <apex:pageBlock title="Customer Details" id="cusDetBlk">
+          <apex:pageBlockSection columns="2">
+             <apex:commandButton action="{!saveProjects}" value="Save" rerender="colBudget"  style="width:100px"/>
+          </apex:pageBlockSection> 
+          <apex:pageBlockSection columns="2">
+             <apex:outputText label="Customer Name" value="{!Customer__c.Name__c}"  />   
+             <apex:outputText label="Status" value="{!Customer__c.Status__c}"/> 
+             <apex:outputText label="Address" value="{!Customer__c.Address__c}"/> 
+             <apex:outputText label="Age" value="{!Customer__c.Age__c}"/> 
+         </apex:pageBlockSection>   
+          <apex:pageBlockSection columns="1" id="pgBlckTable">
+         <apex:pageBlockTable value="{!projects}" var="item"  id="detTable" >
+            <apex:column headerValue="Name"> <apex:outputText value="{!item.Name}"> </apex:outputText> </apex:column>
+            <apex:column headerValue="Q1"> <apex:inputText value="{!item.Q1__c}"> </apex:inputText> </apex:column>
+            <apex:column headerValue="Q2"> <apex:inputText value="{!item.Q2__c}"> </apex:inputText> </apex:column>
+            <apex:column headerValue="Q3"> <apex:inputText value="{!item.Q3__c}"> </apex:inputText> </apex:column>
+            <apex:column headerValue="Q3"> <apex:inputText value="{!item.Q4__c}"> </apex:inputText> </apex:column>
+            <apex:column headerValue="Budget/Proj" id="colBudget"> <apex:outputText value="{!item.Budget__c}"> </apex:outputText> </apex:column>
+         
+        </apex:pageBlockTable>
+         </apex:pageBlockSection>   
+      </apex:pageBlock> 
+    </apex:form> 
+</apex:page>

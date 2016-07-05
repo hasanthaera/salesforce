@@ -1,0 +1,6 @@
+<apex:page showHeader="true" Title="Manage Accounts" standardController="Account" tabStyle="Account"  >
+  <!-- Begin Default Content REMOVE THIS -->
+  <h1>Congratulations</h1>
+  This is your new Page: REST_ClientPage
+  <!-- End Default Content REMOVE THIS -->
+</apex:page>

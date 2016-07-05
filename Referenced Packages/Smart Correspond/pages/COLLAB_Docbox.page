@@ -1,0 +1,64 @@
+<apex:page sidebar="false" standardController="TH1__Docbox__c" extensions="TH1.COLLAB_CO_Docbox" showHeader="{!DisplayHeader}" action="{!onload}" tabStyle="Collaborate__tab">
+	<apex:includeScript value="/support/console/29.0/integration.js"/>
+	<c:DOCGEN_DocumentGenerator />
+	<c:DOCGEN_CollaborateControl />
+	<c:COMMON_FeaturesJS />
+	
+	<script type="text/javascript">
+		$(function() {
+	        Thunderhead.SF.require('browser', 'docgen/docgen', 'document-processor', 'docgen/collaborate', 'ui/job-messages', 'features', 'ui/messages')
+	                .done(function(Browser, DocumentGenerator, DocumentProcessor, Collaborate, JobMessages, Features, Messages) {
+		        var urlParams = Browser.getUrlParams();
+		        
+		        if(!Features.collaborateIsLicensed) {
+		        	DocumentGenerator.hideSpinner(true);
+	            	var featureMessage = Messages.buildErrorHtml(Features.collaborateFeatureMessage);
+	            	$('#collabErrorMessage').empty().append(featureMessage);
+	            	return;
+	            }
+		        
+		        var isServiceConsole = urlParams.console === 'true';
+		        
+		        JobMessages.on('MESSAGES_BACK', function(){
+		          return DocumentGenerator.returnToRecord();
+		        });
+		        
+		        var hash = Browser.getDocboxIdHash();
+		        if (hash) {
+		        	var genContxt = {
+			            docboxId: hash,
+			            isServiceConsole: isServiceConsole,
+			            consoleTabId: urlParams.consoleTabId ?  urlParams.consoleTabId : ''
+			        };
+			        DocumentProcessor.fire('COLLABORATE', genContxt);
+			        
+		        } else if(DocumentProcessor.isGenerated(urlParams.genId)) {
+                    return DocumentGenerator.returnToRecord();
+                    
+                } else if (urlParams.action) {
+		        	//Url contains an action so we need to do a generate (create the docbox)
+			        var genContxt = {
+			            action: urlParams.action,
+			            docSettingId: urlParams.docSettingId,
+			            objectId: urlParams.objectId,
+			            isServiceConsole: isServiceConsole,
+			            consoleTabId: urlParams.consoleTabId ?  urlParams.consoleTabId : ''
+			        };
+			        DocumentGenerator.init(genContxt);
+			        
+		        } else if (urlParams.id) {
+		        	//Url contains id so the docbox exists and we need to load it
+		        	var genContxt = {
+			            docboxId: urlParams.id,
+			            isServiceConsole: isServiceConsole,
+			            consoleTabId: urlParams.consoleTabId ?  urlParams.consoleTabId : ''
+			        };
+			        DocumentProcessor.fire('COLLABORATE', genContxt);
+		        }
+	        });
+    	});
+    </script>
+    <div id="collabDocumentContainer">
+		<div id="collabErrorMessage"></div>
+	</div>
+</apex:page>

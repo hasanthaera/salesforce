@@ -1,0 +1,155 @@
+<apex:page standardController="TH1__Draft__c" extensions="TH1.DOCEDT_CO_Editor" action="{!onload}" sidebar="false"
+        showHeader="{!DisplayHeader}" tabstyle="Drafts__tab">
+
+    <c:COMMON_HelpUtil />
+
+    <c:DOCGEN_DocumentGenerator />
+    <c:DOCGEN_PreviewControl />
+
+    <c:DOCGEN_DocusignControl />
+    <c:DOCGEN_CollaborateControl />
+    <c:LoadJS module="docgen/echosign" />
+
+
+    <c:DOCEDT_DraftEditor />
+    <c:COMMON_FeaturesJS />
+
+    <script>
+    $(function() {
+        Thunderhead.SF.require('visualforce/sf-console', 'browser', 'ui/resize', 'document-processor', 'docedt/docedt', 'docgen/docgen', 'ui/job-messages', 'features', 'ui/messages')
+                .done(function(SfConsole, Browser, Resize, DocumentProcessor, DraftEditor, DocGen, JobMessages, Features, Messages, SF, window) {
+
+            var urlParams = Browser.getUrlParams();
+
+            var continueAction = function(objectId, wasGenerate) {
+                var genContext = DocumentProcessor.getGenerationContext();
+                if (isServiceConsole) {
+                    if (generationContext && wasGenerate) {
+                        DocGen.closeConsoleTab(generationContext.consoleTabId);
+					} else {
+					   		SfConsole.getEnclosingTabId(function(result) { SfConsole.closeTab(result.id); });
+                    }
+				}
+				else if(genContext.redirectUrlIsUserSpecified) {
+					Browser.redirect(genContext.redirectUrl);
+				}
+				else if(returnTo && 'DRAFTSLIST' === returnTo.toUpperCase() && !wasGenerate) {
+				   Browser.redirect('/apex/DRAFTS_DraftsList');
+				}
+				else if (genContext.redirectUrl) {
+                    Browser.redirect(genContext.redirectUrl);
+				}
+				else {
+				   Browser.redirect('/' + objectId);
+				}
+            }
+
+            var isServiceConsole = urlParams.console === 'true';
+            var noHeader = urlParams.console === 'true' || {!NOT(DisplayHeader)};
+            var returnTo = urlParams.returnTo;
+            var generationContext = {
+                action: urlParams.action,
+                docSettingId: urlParams.docSettingId,
+                objectId: urlParams.objectId,
+                isServiceConsole: isServiceConsole,
+                consoleTabId: urlParams.consoleTabId ?  urlParams.consoleTabId : ''
+            };
+
+            if(!Features.draftEditingIsLicensed) {
+            	DocGen.hideSpinner(true);
+            	var featureMessage = Messages.buildErrorHtml(Features.draftEditingFeatureMessage);
+            	$('#editErrorMessage').empty().append(featureMessage);
+            	return;
+            }
+
+            var draftIdHash = Browser.getDraftIdHash();
+            var docboxIdHash = Browser.getDocboxIdHash();
+            if (draftIdHash) {
+            	DraftEditor.init(generationContext, noHeader ? Resize.CONSOLE_FOOTER_HEIGHT : Resize.DEFAULT_FOOTER_HEIGHT);
+            	generationContext.draftRecordId = draftIdHash;
+               	DocumentProcessor.generationContext = generationContext;
+               	DraftEditor.loadDraft(generationContext.draftRecordId);
+
+           	} else if (docboxIdHash) {
+           		DraftEditor.init(generationContext, noHeader ? Resize.CONSOLE_FOOTER_HEIGHT : Resize.DEFAULT_FOOTER_HEIGHT);
+             	generationContext.docboxId = docboxIdHash;
+             	DocumentProcessor.fire('COLLABORATE', generationContext);
+
+            } else if (DocumentProcessor.isGenerated(urlParams.genId)) {
+                return continueAction(generationContext.objectId, true);
+
+            } else {
+           		DraftEditor.init(generationContext, noHeader ? Resize.CONSOLE_FOOTER_HEIGHT : Resize.DEFAULT_FOOTER_HEIGHT);
+
+	            if (urlParams.id) {
+	               generationContext.draftRecordId = urlParams.id;
+	               DocumentProcessor.generationContext = generationContext;
+	               DraftEditor.loadDraft(generationContext.draftRecordId);
+	            } else if(urlParams.action){
+	            	DocGen.init(generationContext);
+	            } else {
+	            	DocGen.showErrors({message: 'Creating drafts by this means is not supported.'});
+	            }
+            }
+
+            DocumentProcessor.on('COMPLETE', function(generationContext) {
+                continueAction(generationContext.objectId, true);
+            });
+
+			DocumentProcessor.on('DRAFT_EDITOR', function(generationContext) {
+                DraftEditor.loadDraft(generationContext.draftRecordId);
+            });
+
+            DraftEditor.on('DRAFT_LOADED', function(draft) {
+                if (isServiceConsole) {
+                    SfConsole.setTabTitle('Draft: ' + draft.documentTitle);
+                    SfConsole.setTabLink();
+                }
+            });
+
+            DraftEditor.on('DRAFT_REVISED', function(revisedDraftId) {
+			    var generationContext = {
+	                docSettingId: urlParams.docSettingId,
+	                objectId: urlParams.objectId,
+	                isServiceConsole: isServiceConsole,
+	                consoleTabId: urlParams.consoleTabId ?  urlParams.consoleTabId : '',
+	                draftRecordId: revisedDraftId
+	            };
+
+                DocumentProcessor.generationContext = generationContext;
+            });
+
+            DraftEditor.on('DRAFT_RELOAD', function(draftId) {
+                DraftEditor.loadDraft(draftId);
+            });
+
+            DraftEditor.on('DRAFT_CLOSE', function(objectId) {
+                continueAction(objectId, false);
+            });
+
+            DraftEditor.on('DRAFT_DELETED', function(isDeleted, objectId) {
+                window.onbeforeunload = null;
+                continueAction(objectId, false);
+            });
+
+            JobMessages.on('MESSAGES_CONTINUE', function () {
+                DocGen.processPackage();
+            });
+
+			JobMessages.on('MESSAGES_BACK', function () {
+                if(DocumentProcessor.generationContext.action === 'finalise') {
+                    DocGen.hideLogo();
+                    JobMessages.clearContainer();
+                    //show draft editor
+                    DraftEditor.show();
+                } else {
+                    DocGen.returnToRecord();
+                }
+            });
+        });
+    });
+    </script>
+	<div id="editDocumentContainer">
+		<div id="editErrorMessage"></div>
+	</div>
+</apex:page>

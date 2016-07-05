@@ -1,0 +1,3 @@
+<apex:page controller="TH1.COLLAB_CO_DocboxList" action="{!onload}" sidebar="false" tabStyle="Collaborate__tab">
+   	<c:GLOBAL_DocboxInlineList multiDelete="true" />
+</apex:page>

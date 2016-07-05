@@ -1,0 +1,15 @@
+<apex:page showHeader="true" Title="Manage Accounts" standardController="Account" tabStyle="Account" >
+<apex:sectionHeader title="Manage Accounts" />
+<apex:image url="{!$Resource.image1}" width="50" height="50"/>  
+    <apex:form >
+     <apex:pageBlock title="Accounts" >
+      <apex:commandButton action="{!save}" value="save"   style="width:100px"/>
+         <apex:pageBlockSection columns="2" title="REST Accounts Details" >
+            <apex:inputField value="{!Account.name}" required="false"/>    
+            <apex:inputField value="{!Account.WS_category__c}"/>            
+            <apex:inputField value="{!Account.WS_date__c}"/>
+            <apex:inputField value="{!Account.WS_Verified__c }"/>
+          </apex:pageBlockSection>  
+     </apex:pageBlock> 
+    </apex:form>
+</apex:page>

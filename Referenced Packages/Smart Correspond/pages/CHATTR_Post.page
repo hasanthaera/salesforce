@@ -1,0 +1,88 @@
+<apex:page controller="TH1.CHATTR_CO_Post" showHeader="false" sidebar="false">
+<c:COMMON_JQueryLib />
+<style>
+.container{
+	padding: 20px;
+	width: 420px;
+}
+.container table{
+}
+.chatter_text{
+	width: 420px;
+	border: solid 1px gray;
+	border-radius: 5px;
+}
+#chatter_text_area{
+	background:transparent url(/img/alohaSkin/feeds/cloud.png) no-repeat scroll right top;
+    border: 1 px solid black;
+    padding-top: 10px;
+    padding-left: 0;
+    padding-bottom:10px;
+    margin-bottom:15px;
+   	height:55px;
+}
+.share_button{
+	float: right;
+}
+.container li{
+	border-bottom: solid 1px lightgray;
+	margin-bottom: 10px;
+	list-style: none;
+	padding: 5px;
+	float: left;
+}
+.container div	{
+	float: left;
+}
+div.text	{
+	width: 340px;
+	word-wrap:break-word;
+	margin-left: 5px;
+}
+.chatter_name{
+	color: #015BA7;
+	font-weight: bold;
+}
+.datetime{
+	color: grey;
+	font-size: 10pt;
+}
+textarea{resize: none}
+</style>
+<apex:form >
+    <apex:pageMessages />
+<apex:actionFunction name="refresh" action="{!refresh}"/>
+<div class="container">
+	<table cellspacing="5px">
+	<tr>
+	<td>
+	<apex:selectList id="th_select_chat_group" value="{!chatterGroupId}" size="1" styleClass="chatter_group" onchange="refresh();">
+		<apex:selectOptions value="{!chatterGroups}"/>
+	</apex:selectList>
+	<div id="chatter_text_area">
+	<apex:inputTextArea id="th_texta_chat_text" value="{!chatterText}" styleClass="chatter_text" />
+	<apex:commandButton id="th_btn_share" value="Share" action="{!postChatToGroup}" styleClass="share_button btnPrimary publishersharebutton btn"/>
+	</div>
+	</td>
+	</tr>
+	<apex:repeat value="{!ChatterPosts}" var="post">
+		<tr>
+		<td>
+			<div><img src="{!post.chatByUser.SmallPhotoUrl}" width="45px"/></div>
+			<div class="text">
+				<a href="../{!post.post.CreatedById}" target="_blank" class="chatter_name">{!post.chatByUser.Name}</a> {!post.post.body} &nbsp;&nbsp; 
+				<br/><b>{!post.post.title}</b><br/><a href="{!post.post.linkUrl}" target="_blank">{!post.post.linkUrl}</a><br/>
+				<span class="datetime">
+					<apex:outputText value="{0,date,dd/MM/yyyy 'at' HH:mm}">
+						<apex:param value="{!post.post.CreatedDate}" />
+					</apex:outputText>
+				</span>
+				<br/>
+			</div>
+		  </td>
+		</tr>
+	</apex:repeat>
+	</table>
+</div>
+</apex:form>
+</apex:page>

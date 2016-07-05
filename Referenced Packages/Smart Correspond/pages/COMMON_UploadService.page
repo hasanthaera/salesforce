@@ -1,0 +1,67 @@
+<apex:page controller="TH1.COMMON_CO_UploadService" showHeader="false" sidebar="false">
+    <c:LoadJS module="document-upload-service" />
+    <apex:stylesheet value="{!URLFOR($Resource.TH1__ThunderheadResources, 'styles/oc-styles.css')}"/>
+    <style>
+        #hiddenComponents {
+            display: none;
+        }
+        body{
+            overflow: hidden;
+            padding: 0px;
+            margin: 0px;
+        }
+        .browse {
+            height: 0px;
+            width: 0px;
+            margin: 1px;
+            opacity: 0;
+            position: absolute;
+            left: -9999px;
+        }
+        .skywalker_button {
+            position: absolute;
+            margin: 0px;
+        }
+    </style>
+    <div>
+        <script>
+            $(function() {
+                Thunderhead.SF.require('document-upload-service').done(function(DocumentUploadService, SF, window) {
+                    $('.browse').attr('id', 'inputFile');
+                    var documentUploaderService = window.documentUploaderService = new DocumentUploadService('browse', 'upload',
+                           'docToDelete', 'delete', 'fileDescription', 'storageLocation', '{!JSENCODE($CurrentPage.parameters.serviceId)}');
+                    if(window.parent !== window.self) {
+                        documentUploaderService.registerWindow(window.parent);
+                    }
+
+                    var errorMessage = '{!JSENCODE(errorMessage)}';
+                    var fileState = '{!JSENCODE(fileState)}';
+                    var uploadedDocId = '{!JSENCODE(docId)}';
+                    var uploadedDocName = '{!JSENCODE(docName)}';
+
+                    if(errorMessage) {
+                        documentUploaderService.throwError(fileState, errorMessage, {docName: uploadedDocName, docId: uploadedDocId});
+                    } else if (fileState){
+                        if(fileState === 'uploaded') {
+                            documentUploaderService.finishUpload(uploadedDocId, uploadedDocName);
+                        } else if (fileState === 'deleted') {
+                            documentUploaderService.acknowledgeDelete(uploadedDocId);
+                        }
+                    }
+                });
+            });
+        </script>
+        <apex:form id="theForm">
+            <div id="uploader">
+                <label class="skywalker_button" for="inputFile">From My Computer</label>
+                <apex:inputFile value="{!currentFile.content}" filename="{!currentFile.name}" fileSize="{!currentFile.size}" contentType="{!currentFile.contentType}" onchange="window.documentUploaderService.startUpload(this.value)" styleClass="browse"/>
+            </div>
+            <span id="hiddenComponents">
+                <apex:commandButton value="Delete" action="{!deleteFile}" styleClass="delete" />
+                Delete Doc Id:
+                <apex:inputText id="docToDelete" value="{!currentFile.id}" styleClass="docToDelete"/>
+                <apex:commandButton value="Upload" action="{!uploadFile}" styleClass="upload" />
+            </span>
+        </apex:form>
+    </div>
+</apex:page>

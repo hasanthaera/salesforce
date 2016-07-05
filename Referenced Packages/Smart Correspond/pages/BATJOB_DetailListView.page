@@ -1,0 +1,95 @@
+<apex:page controller="TH1.BATJOB_CO_DetailListView" sidebar="false" tabstyle="Batch_Jobs__tab" action="{!onload}">
+	<c:COMMON_JQueryLib />
+	<apex:sectionHeader title="Batch Job Detail" subtitle="Job Detail" />
+	<apex:pageMessage summary="{!BatchFeatureMessage}" severity="info" strength="3" rendered="{!NOT(BulkGenerationIsLicensed)}" escape="false" />
+	<apex:form rendered="{!BulkGenerationIsLicensed}">
+		<div class="bPageTitle" style="padding:0px;">
+			<div class="ptBody">
+				<c:COMMON_PageHelpLink helpUrlPath="BatchJobsPage.htm" showText="true"/>
+			</div>
+		</div>
+		<apex:pageBlock id="record_list" title="Job Detail List" mode="detail">
+			<apex:pageBlockButtons >
+	 			<apex:commandButton action="{!Back}" value="Back" rendered="{!NOT(ShowMsgDetail)}"/>
+	 			<apex:commandButton action="{!BackToList}" value="Back to List" rendered="{!ShowMsgDetail}"/>
+	 		</apex:pageBlockButtons>
+			<apex:pageBlockSection columns="2">
+				<apex:outputField value="{!BatchJob.TH1__Job_Type__c}"/>
+				<apex:outputField value="{!BatchJob.TH1__Job_start_date__c}"/>
+				<apex:outputField value="{!BatchJob.TH1__Status__c}"/>
+				<apex:outputField value="{!BatchJob.TH1__Job_end_date__c}"/>
+				<apex:outputField value="{!BatchJob.TH1__Document_setting__c}" rendered="{!SingleDocumentSetting}"/>
+				<apex:outputField value="{!BatchJob.TH1__Name__c}" rendered="{!NOT(SingleDocumentSetting)}"/>
+				<apex:outputField value="{!BatchJob.TH1__Job_duration_minutes__c}"/>
+			</apex:pageBlockSection>
+			<apex:pageBlockSection title="Details" columns="1" collapsible="false" rendered="{!NOT(ShowMsgDetail)}">
+				<apex:pageBlockTable value="{!BatchJobDetailRow}" var="JD">
+					<apex:column value="{!JD.Message.TH1__Job_number__c}"/>
+					<apex:column rendered="{!NOT(SingleDocumentSetting)}" styleClass="col_docsettingname">
+                        <apex:facet name="header"><apex:outputText value="Document Setting"/></apex:facet>
+                        <apex:outputLink value="/{!JD.Message.TH1__Document_setting_id__c}" rendered="{!JD.DocumentSettingName!=null}">{!JD.DocumentSettingName}</apex:outputLink>
+                        <apex:outputText value="Document Setting Deleted" rendered="{!JD.DocumentSettingName==null}"/>
+                    </apex:column>
+					<apex:column styleClass="col_recordname">
+						<apex:facet name="header"><apex:outputText value="{!IF(ObjectName==null, 'Object Name', $ObjectType[ObjectName].fields[ObjectNameFieldName].Label)}"/></apex:facet>
+						<apex:outputLink value="/{!JD.Message.TH1__Object_id__c}">{!JD.ObjectRecordName}</apex:outputLink>
+					</apex:column>
+					<apex:column value="{!JD.Message.TH1__Message__c}"  styleClass="col_message"/>
+					<apex:column styleClass="col_detail">
+						<apex:commandLink id="th_link_detail" action="{!msgDetail}" value="Detail..." reRender="record_list">
+							<apex:param name="actionrecordid" value="{!JD.RecordId}" assignTo="{!ActionRecordId}"/>
+							<apex:param name="objectname" value="{!JD.ObjectRecordName}" assignTo="{!ObjectRecordName}"/>
+						</apex:commandLink>
+					</apex:column>
+		       	</apex:pageBlockTable>
+				<apex:outputPanel >
+					<apex:outputText value="no failed documents" rendered="{!NOT(RecordsToDisplay)}"/>
+				</apex:outputPanel>
+				<apex:toolbar styleClass="pagingToolBar" rendered="{!ListViewTotalRecords > 10}">
+					<apex:toolbarGroup itemSeparator="none" location="left">
+						<apex:outputPanel >
+							<apex:outputText >Display </apex:outputText>
+							<apex:selectList id="th_select_rows_per_page" value="{!RowsPerPage}" size="1">
+								<apex:selectOptions value="{!RowsPerPageOptionList}"/>
+								<apex:actionSupport event="onchange" action="{!resetPage}" reRender="record_list"/>
+							</apex:selectList>
+							<apex:outputText >records per page</apex:outputText>
+						</apex:outputPanel>
+					</apex:toolbarGroup>
+					<apex:toolbarGroup itemSeparator="none" location="right">
+						<apex:commandLink id="th_btn_previous" value="<Previous page" action="{!previousPage}"  rendered="{!hasPrevious}" reRender="record_list"/>
+						<apex:commandLink id="th_btn_next" value="Next page>" action="{!nextPage}" rendered="{!hasNext}" reRender="record_list"/>
+					</apex:toolbarGroup>
+				</apex:toolbar>
+		    </apex:pageBlockSection>
+		    <apex:pageBlockSection title="Message Detail" columns="1" collapsible="false" rendered="{!ShowMsgDetail}">
+		    	<apex:outputField value="{!JobMessage.TH1__Job_number__c}"/>
+		    	<apex:pageBlockSectionItem rendered="{!NOT(SingleDocumentSetting)}">
+                    <apex:outputLabel value="Document Setting"/>
+                    <apex:outputPanel >
+                       	<apex:outputLink value="/{!JobMessage.TH1__Document_setting_id__c}" rendered="{!JobDocumentSettingName!=null}">{!JobDocumentSettingName}</apex:outputLink>
+                       	<apex:outputText value="Invalid Document Setting! No Document Setting exists for id: {!JobMessage.TH1__Document_setting_id__c}" rendered="{!JobDocumentSettingName==null}"/>
+                   	</apex:outputPanel>
+                </apex:pageBlockSectionItem>
+		    	<apex:pageBlockSectionItem >
+		    		<apex:outputLabel value="{!IF(ObjectName==null, 'Object Name', $ObjectType[ObjectName].fields[ObjectNameFieldName].Label)}"/>
+		    		<apex:outputLink value="/{!JobMessage.TH1__Object_id__c}">{!ObjectRecordName}</apex:outputLink>
+		    	</apex:pageBlockSectionItem>
+		    	<apex:outputField value="{!JobMessage.TH1__Message__c}"/>
+		    	<apex:outputField value="{!JobMessage.TH1__Message_detail__c}"/>
+		    </apex:pageBlockSection>
+		</apex:pageBlock>
+	</apex:form>
+	<c:COMMON_HelpUtil />
+	<style>
+		.pagingToolBar {
+			background-color: #F3F3EC;
+			background-image: none;
+			border: none;
+		}
+		.listViewLabel {
+			font-weight: bold;
+			margin-left: 20px;
+		}
+	</style>
+</apex:page>

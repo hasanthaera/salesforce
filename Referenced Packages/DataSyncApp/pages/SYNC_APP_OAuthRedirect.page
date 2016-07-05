@@ -1,0 +1,28 @@
+<apex:page controller="DataSync.SYNC_APP_OAuthRedirectCtrl" docType="html-5.0" sidebar="false" showHeader="false" standardStylesheets="false" cache="true">
+
+	<apex:stylesheet value="{!URLFOR($Resource.DataSync__Sync_App_Resources, 'css/bootstrap.min.css')}"/>
+	
+	<script type="Text/JavaScript">
+	
+		function loadConnectScreen(){
+		    window.location.href = '{!URLFOR($Page.SYNC_APP_Connect)}';
+		}
+		
+	</script>
+	
+	<apex:form >
+		<div class="container visible-tablet">
+			<div class="jumbotron">
+		    	<div class="container">
+			        <h1>ABSI Data Refresh Tool</h1>
+			        <p>This smart application by ABSI will help you to address all your data refresh requirements between Salesforce Orgs.</p>
+			        <p style='text-align: center;padding-top: 30px;'>
+			        	<!-- Call setTokens() to save OAuth tokens -->
+			            <apex:commandButton styleClass="btn btn-large btn-primary" action="{!setTokens}" value="Start Sync Application" oncomplete="loadConnectScreen()"/>
+					</p>
+				</div>
+			</div>
+		</div>
+	</apex:form>
+    
+</apex:page>

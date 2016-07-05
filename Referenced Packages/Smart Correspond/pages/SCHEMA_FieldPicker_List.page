@@ -1,0 +1,148 @@
+<apex:page controller="TH1.SCHEMA_CO_FieldPickerList" action="{!onload}"
+        sidebar="false" tabstyle="Data_Models__tab">
+<style>
+.pagingToolBar {
+	background-color: #f2f3f3;
+	background-image: none;
+	border: none;
+}
+.listViewLabel {
+	font-weight: bold;
+	margin-left: 20px;
+}
+</style>
+<c:COMMON_JQueryLib />
+	
+	<apex:form >
+		<c:COMMON_Mask />  
+		<apex:sectionHeader title="{!PrimaryObjectLabelPlural} " subtitle="Home"/>
+		
+		<apex:pageMessage summary="{!ObjectNotAccessibleMessage}" severity="info" strength="3" rendered="{!NOT(PrimaryObjectIsAccessible)}"/>
+		
+		<!-- Replicate SF help for this page link and icon -->
+		<div class="bPageTitle">
+			<div class="ptBody">
+				<apex:outputLabel value="View: " styleClass="listViewLabel"/>
+				<apex:selectList id="th_select_view_mode" value="{!ListView}" size="1">
+					<apex:selectOptions value="{!ListViewOptionList}"/>
+					<apex:actionSupport event="onchange" action="{!resetPage}" reRender="record_list"/>
+				</apex:selectList>
+			
+				<c:COMMON_PageHelpLink helpUrlPath="index.htm#DataModelsPage.htm" showText="true"/>
+			</div>
+		</div>
+		
+		<apex:pageBlock id="record_list">
+			<apex:pageMessages />
+			<apex:pageBlockButtons location="top">
+				<apex:commandButton id="th_btn_new" action="{!newRecord}" value="New" rendered="{!PrimaryObjectIsCreateable}" />
+				<apex:commandButton id="th_btn_validate" action="{!validateAll}" value="Validate All" rendered="{!PrimaryObjectIsUpdateable}"/>
+			</apex:pageBlockButtons>
+			<apex:pageBlockTable value="{!recordList}" var="record" rendered="{!PrimaryObjectIsAccessible}">
+				<apex:column headerValue="Action" styleClass="actionColumn col_action_{!SUBSTITUTE(record.SchemaSet.Name, ' ', '_')}">
+					<apex:commandLink id="th_link_edit_row" action="{!editRecord}" rendered="{!AND(record.SobjectExists, record.RecordAccess.HasEditAccess)}" styleClass="actionLink">
+						<span>Edit</span>
+						<apex:param name="actionrecordid" value="{!record.SchemaSet.Id}" assignTo="{!ActionRecordId}"/>
+					</apex:commandLink>
+					<apex:outputText rendered="{!AND(record.SobjectExists, record.RecordAccess.HasDeleteAccess)}">&nbsp;|&nbsp;</apex:outputText>
+					<apex:commandLink id="th_link_delete_row" styleClass="actionLink" action="{!deleteRecord}" reRender="record_list" rendered="{!record.RecordAccess.HasDeleteAccess}" 
+						onclick="if (!window.confirm('Are you sure?')) {return false;} else {showMask();}" oncomplete="hideMask();">
+						<span>Del</span>
+						<apex:param name="actionrecordid" value="{!record.SchemaSet.Id}" assignTo="{!ActionRecordId}"/>
+					</apex:commandLink>
+				</apex:column>
+				<apex:column styleClass="col_datamodelname_{!SUBSTITUTE(record.SchemaSet.Name, ' ', '_')}">
+					<apex:facet name="header">
+                        <apex:commandLink value="{!$ObjectType.TH1__Schema_Set__c.Fields.Name.Label} {!IF(ColumnSortField=='Name',IF(ColumnSortOrder=='desc','↓','↑'),'')}" action="{!sortColumn}" rerender="record_list">
+                        	<apex:param name="columnSortField" value="Name" assignTo="{!ColumnSortField}"/>
+                        </apex:commandLink>
+                    </apex:facet>
+					<apex:commandLink action="{!editRecord}" rendered="{!AND(record.SobjectExists, record.RecordAccess.HasEditAccess)}">
+						{!record.SchemaSet.Name}
+						<apex:param name="actionrecordid" value="{!record.SchemaSet.Id}" assignTo="{!ActionRecordId}"/>
+					</apex:commandLink>
+					<apex:outputText value="{!record.SchemaSet.Name}" rendered="{!OR(NOT(record.SobjectExists), NOT(record.RecordAccess.HasEditAccess))}"/>
+				</apex:column>
+				<apex:column styleClass="col_primaryobject_{!SUBSTITUTE(record.SchemaSet.Name, ' ', '_')}">
+					<apex:facet name="header">
+                        <apex:commandLink value="{!$ObjectType.TH1__Schema_Set__c.Fields.TH1__Primary_Object__c.Label} {!IF(ColumnSortField=='Primary_Object__r.Name',IF(ColumnSortOrder=='desc','↓','↑'),'')}" action="{!sortColumn}" rerender="record_list">
+                        	<apex:param name="columnSortField" value="Primary_Object__r.Name" assignTo="{!ColumnSortField}"/>
+                        </apex:commandLink>
+                    </apex:facet>
+					<apex:OutputText value="{!if(record.SobjectExists, record.SchemaSet.Primary_Object__r.Name, '** Primary object no longer exists **')}"/>
+				</apex:column>
+				<apex:column styleClass="col_createddate_{!SUBSTITUTE(record.SchemaSet.Name, ' ', '_')}">
+					<apex:facet name="header">
+                        <apex:commandLink value="{!$ObjectType.TH1__Schema_Set__c.Fields.CreatedDate.Label} {!IF(ColumnSortField=='CreatedDate',IF(ColumnSortOrder=='desc','↓','↑'),'')}" action="{!sortColumn}" rerender="record_list">
+                        	<apex:param name="columnSortField" value="CreatedDate" assignTo="{!ColumnSortField}"/>
+                        </apex:commandLink>
+                    </apex:facet>
+                    <apex:outputField value="{!record.SchemaSet.CreatedDate}"/>
+				</apex:column>
+				<apex:column styleClass="col_lastmoddate_{!SUBSTITUTE(record.SchemaSet.Name, ' ', '_')}">
+					<apex:facet name="header">
+                        <apex:commandLink value="{!$ObjectType.TH1__Schema_Set__c.Fields.LastModifiedDate.Label} {!IF(ColumnSortField=='LastModifiedDate',IF(LmdOrder=='desc','↓','↑'),'')}" action="{!sortColumn}" rerender="record_list">
+                        	<apex:param name="columnSortField" value="LastModifiedDate" assignTo="{!ColumnSortField}"/>
+                        </apex:commandLink>
+                    </apex:facet>
+                    <apex:outputField value="{!record.SchemaSet.LastModifiedDate}"/>
+				</apex:column>
+				<!--  
+				<apex:column >
+					<apex:facet name="header">In Draft</apex:facet>
+                    <apex:image url="{!IF(record.IsDraft, '/img/checkbox_checked.gif', '/img/checkbox_unchecked.gif')}"/>
+				</apex:column>
+				-->
+				<apex:column styleClass="col_inuse_{!SUBSTITUTE(record.SchemaSet.Name, ' ', '_')}">
+					<apex:facet name="header">Used by Document Setting</apex:facet>
+					<apex:image url="{!IF(record.InUse, '/img/checkbox_checked.gif', '/img/checkbox_unchecked.gif')}"/>
+				</apex:column>
+				<apex:column styleClass="col_validation_{!SUBSTITUTE(record.SchemaSet.Name, ' ', '_')}">
+					<apex:facet name="header">Validation</apex:facet>
+                    <apex:image value="{!URLFOR($Resource.TH1__ThunderheadResources, 'images/error.png')}" styleclass="warning_img" title="Validation failed" rendered="{!record.HasErrors}"/>
+				</apex:column>
+				<apex:column styleClass="col_advanced_{!SUBSTITUTE(record.SchemaSet.Name, ' ', '_')}" rendered="{!AND(PrimaryObjectIsUpdateable, isSFTenant)}">
+					<apex:facet name="header">Advanced</apex:facet>
+                    <apex:outputLink value="/apex/SCHEMA_SampleDataSelection?schemaId={!record.SchemaSet.Id}" styleClass="th_link_sample_data" rendered="{!AND(record.SobjectExists, record.RecordAccess.HasEditAccess)}">
+                    	Sample data...
+					</apex:outputLink>
+				</apex:column>
+			</apex:pageBlockTable>
+			<apex:outputPanel >
+				<apex:outputText value="no records to display" rendered="{!NOT(recordsToDisplay)}"/>
+			</apex:outputPanel>
+			<apex:toolbar styleClass="pagingToolBar" rendered="{!PrimaryObjectIsAccessible}">
+				<apex:toolbarGroup itemSeparator="none" location="left">
+					<apex:outputPanel rendered="{!ListViewTotalRecords > 10}">
+						<apex:outputText >Display </apex:outputText>
+						<apex:selectList id="th_select_rows_per_page" value="{!RowsPerPage}" size="1">
+							<apex:selectOptions value="{!RowsPerPageOptionList}"/>
+							<apex:actionSupport event="onchange" action="{!resetPage}" reRender="record_list"/>
+						</apex:selectList>
+						<apex:outputText > records per page</apex:outputText>
+					</apex:outputPanel>
+				</apex:toolbarGroup>
+				<apex:toolbarGroup itemSeparator="none" location="right">
+					<apex:commandLink id="th_btn_previous" value="<Previous page" action="{!previousPage}"  rendered="{!hasPrevious}" reRender="record_list"/>
+					<apex:commandLink id="th_btn_next" value="Next page>" action="{!nextPage}" rendered="{!hasNext}" reRender="record_list"/>
+				</apex:toolbarGroup>
+			</apex:toolbar>
+			<script>
+				jQuery(document).ready(function($){
+					$('.all_rows_select').click(function() {
+						var checkBoxState = false;
+						if($(this).is(':checked')){
+							checkBoxState = true;
+						}
+						
+						$('input.row_select').each(function(){
+			           		$(this).attr("checked", checkBoxState);
+						});
+					});
+				});
+			</script>
+			
+		</apex:pageBlock>
+	</apex:form>
+	
+</apex:page>

@@ -1,0 +1,235 @@
+<!-- 
+ *************************************************************
+ * Description      : VF Page for SYNC App Connect
+ * @author          : Nadika Dhanusha Mahatantila, Shermal
+ * @since           : 20 June 2014
+ ************************************************************* 
+ -->
+
+<apex:page id="syncAppConnect" controller="DataSync.SYNC_APP_ConnectController" tabStyle="ABSI_Data_Refresh__tab">
+
+	<apex:includeScript value="{!URLFOR($Resource.DataSync__Sync_App_Resources, 'js/jquery-1.11.1.min.js')}"/>
+	
+
+    <!-- Custom Styles -->
+    <style> 
+        .textBox {
+            width:361px !important;
+        }
+        
+        .dropDown {
+            width:361px !important;
+        }
+    </style>
+    
+    <script language="javascript">
+    
+    	var j$ = jQuery.noConflict();
+    
+    	function showHideNewProcess () {
+    		if (j$(".processSelect option:selected" ).text() == '-- New Process --') {
+    			j$(".txt_NewProcess").removeAttr("disabled");
+    			j$(".sOrgSelector").removeAttr("disabled");
+    			j$(".dOrgSelector").removeAttr("disabled");
+    			j$(".txt_SNewOrg").removeAttr("disabled");
+    			j$(".txt_DNewOrg").removeAttr("disabled");
+    		} else {
+    			j$(".txt_NewProcess").attr("disabled", "disabled");
+    			j$(".sOrgSelector").attr("disabled", "disabled");
+    			j$(".dOrgSelector").attr("disabled", "disabled");
+    			j$(".txt_SNewOrg").attr("disabled", "disabled");
+    			j$(".txt_DNewOrg").attr("disabled", "disabled");
+    		}
+    	}
+    	
+    	function showHideNewSOrgCode () {
+    		if (j$(".sOrgSelector option:selected" ).text() == '-- New Org Code --') {
+    			j$(".txt_SNewOrg").removeAttr("disabled");
+    		} else {
+    			j$(".txt_SNewOrg").attr("disabled", "disabled");
+    		}
+    	}
+    	
+    	function showHideNewDOrgCode () {
+    		if (j$(".dOrgSelector option:selected" ).text() == '-- New Org Code --') {
+    			j$(".txt_DNewOrg").removeAttr("disabled");
+    		} else {
+    			j$(".txt_DNewOrg").attr("disabled", "disabled");
+    		}
+    	}
+    	
+    	j$( document ).ready(function() {
+			showHideNewProcess ();
+		});
+
+    
+    </script>
+
+    <!-- Header -->
+    <apex:sectionHeader title="Connect" />
+    
+    <body>  
+        <apex:form id="idForm"> 
+        
+            <!-- Error Page Block Section -->   
+            <apex:outputPanel id="messagePanel">
+	    		<apex:pageMessages />
+	    	</apex:outputPanel> 
+            
+            <!-- UI Components Page Block Section -->                   
+            <apex:pageBlock mode="edit">
+                <!-- Buttons -->
+                <apex:pageBlockButtons location="bottom">
+                    <apex:commandButton action="{!save}" value="Save / Connect" reRender="processSelect, processDetails, sourceOrgDetails, destOrgDetails, messagePanel" status="progressStatus"  oncomplete="showHideNewProcess(); showHideNewSOrgCode(); showHideNewDOrgCode();" />                            
+                    <apex:commandButton action="{!deleteProcess}" value="Delete" reRender="processSelect, processDetails, sourceOrgDetails, destOrgDetails, messagePanel" status="progressStatus"  oncomplete="showHideNewProcess(); showHideNewSOrgCode(); showHideNewDOrgCode();" />                           
+                </apex:pageBlockButtons>
+                
+                <apex:actionFunction name="saveOrgsAtHeroku" action="{!sendNewOrgCodes}" immediate="false" reRender="messagePanel"  status="progressStatus" />
+            
+                <!-- Connection Details -->
+                <apex:pageBlockSection columns="1" id="processSelect">
+	                
+                    <apex:outputLabel value="Define the data refresh process and choose your source and destination." />
+                    <!-- Space -->
+                    <apex:pageBlockSectionItem />  
+                                        
+                    <!-- Processes -->   
+					<apex:pageBlockSectionItem >
+						<apex:outputLabel value="Processes :" />
+						<apex:selectList value="{!selProcess}" size="1" styleClass="dropDown processSelect" onchange="AF_loadProcessDetails();" >
+							<apex:selectOptions value="{!processItems}" />
+						</apex:selectList>
+					</apex:pageBlockSectionItem>
+					
+					<script>
+						var isSaveSuccess = '{!isSaveSuccess}';
+						if (isSaveSuccess == 'true') {
+							saveOrgsAtHeroku();
+						} 
+					</script>
+                    
+				</apex:pageBlockSection>
+				
+				<apex:pageBlockSection columns="1" id="processDetails">
+				
+                    <apex:pageblockSectionItem >
+                    	<apex:outputLabel value="Process Name :" />
+                        <apex:inputText value="{!newProcess}" styleClass="textBox txt_NewProcess" />                    
+                    </apex:pageblockSectionItem>  
+                    
+                </apex:pageBlockSection>
+				<apex:actionFunction name="AF_loadProcessDetails" action="{!loadProcessDetails}" immediate="false" reRender="processDetails, sourceOrgDetails, destOrgDetails, messagePanel" oncomplete="showHideNewProcess();"  status="progressStatus" />                
+                
+                <!-- Source -->
+                <apex:pageBlockSection columns="1" id="sourceOrgDetails" title="Source Organization Details">
+                    <!--		
+					<apex:pageblockSectionItem >
+						<apex:outputPanel ></apex:outputPanel>
+						<apex:outputLabel value="Source Organization Details" style="font-size: medium; font-weight: bold;"/>
+					</apex:pageblockSectionItem>  
+					-->
+					<apex:pageblockSectionItem >
+					    <apex:outputLabel value="Orgs :" />
+					    <apex:selectList value="{!sSfdcOrgCode}" size="1" styleClass="dropDown sOrgSelector" onchange="AF_loadSOrgDetails();" >
+					        <apex:selectOptions value="{!orgCodes}" /> 
+					    </apex:selectList>     
+					</apex:pageblockSectionItem>
+					<apex:actionFunction name="AF_loadSOrgDetails" action="{!loadSourceOrgDetails}" immediate="false" reRender="sourceOrgDetails, messagePanel" oncomplete="showHideNewSOrgCode();"  status="progressStatus" />
+					
+					<apex:pageblockSectionItem >
+                    	<apex:outputLabel value="Org Code :" />
+                        <apex:inputText value="{!sNewOrgCode}" styleClass="textBox txt_SNewOrg" />                    
+                    </apex:pageblockSectionItem> 
+                    
+					<apex:pageblockSectionItem >
+					    <apex:outputLabel value="Type :" />
+					    <apex:selectList value="{!sSfdcOrgType}" size="1" styleClass="dropDown" >
+					        <apex:selectOptions value="{!sfdcOrgTypes}" /> 
+					    </apex:selectList>     
+					</apex:pageblockSectionItem> 
+					
+					<apex:pageblockSectionItem >
+					    <apex:outputLabel value="User Name :" />
+					    <apex:inputText value="{!sUserName}" styleClass="textBox"  html-placeholder="Username"/>  
+					</apex:pageblockSectionItem> 
+					
+					<apex:pageblockSectionItem >
+					    <apex:outputLabel value="Password :" />
+					    <apex:inputSecret value="{!sPassword}" styleClass="textBox" redisplay="true" html-placeholder="Password"/>
+					</apex:pageblockSectionItem> 
+					
+					<apex:pageblockSectionItem >
+					    <apex:outputLabel value="Security Token :" />
+					   	<apex:inputSecret value="{!sSecurityToken}" styleClass="textBox" redisplay="true" html-placeholder="Security Token"/>  
+					</apex:pageblockSectionItem> 
+						
+					<!-- Space -->
+					<apex:pageBlockSectionItem />
+					
+				</apex:pageBlockSection>
+				
+				
+                <!-- Destination -->
+                <apex:pageBlockSection columns="1" id="destOrgDetails" title="Destination Organization Details">
+					<!--
+					<apex:pageblockSectionItem >
+						<apex:outputPanel ></apex:outputPanel>
+						<apex:outputLabel value="Destination Organization Details" style="text-decoration:underline;"/>
+					</apex:pageblockSectionItem> 
+					-->				
+					<apex:pageblockSectionItem >
+					    <apex:outputLabel value="Orgs :" />
+					    <apex:selectList value="{!dSfdcOrgCode}" size="1" styleClass="dropDown dOrgSelector" onchange="AF_loadDOrgDetails()">
+					        <apex:selectOptions value="{!orgCodes}" /> 
+					    </apex:selectList>     
+					</apex:pageblockSectionItem>
+					<apex:actionFunction name="AF_loadDOrgDetails" action="{!loadDestOrgDetails}" immediate="false" reRender="destOrgDetails, messagePanel" oncomplete="showHideNewDOrgCode();"  status="progressStatus" />
+					
+					<apex:pageblockSectionItem >
+                    	<apex:outputLabel value="Org Code :" />
+                        <apex:inputText value="{!dNewOrgCode}" styleClass="textBox txt_DNewOrg" />                    
+                    </apex:pageblockSectionItem>
+                    
+					<apex:pageblockSectionItem >
+					    <apex:outputLabel value="Type :" />
+					    <apex:selectList value="{!dSfdcOrgType}" size="1" styleClass="dropDown" >
+					        <apex:selectOptions value="{!sfdcOrgTypes}" /> 
+					    </apex:selectList>     
+					</apex:pageblockSectionItem> 
+					
+					<apex:pageblockSectionItem >
+					    <apex:outputLabel value="User Name :" />
+					    <apex:inputText value="{!dUserName}" styleClass="textBox" html-placeholder="Username" />  
+					</apex:pageblockSectionItem>
+					 
+					<apex:pageblockSectionItem >
+					    <apex:outputLabel value="Password :" />
+					    <apex:inputSecret value="{!dPassword}" styleClass="textBox" redisplay="true" html-placeholder="Password" />
+					</apex:pageblockSectionItem>
+					 
+					<apex:pageblockSectionItem >
+					    <apex:outputLabel value="Security Token :" />
+					    <apex:inputSecret value="{!dSecurityToken}" styleClass="textBox" redisplay="true" html-placeholder="Security Token"/>  
+					</apex:pageblockSectionItem> 
+	                    
+				</apex:pageBlockSection>
+				
+				<!-- Job History -->
+                <apex:pageBlockSection columns="1">
+                	<!-- Space -->
+                    <apex:pageBlockSectionItem /> 
+					<apex:pageblockSectionItem >
+						<apex:commandButton id="cbtneditlogin" action="{!showJobHistory}" style="background-position: 0 0;bgcolor:white;background-image:url({!URLFOR($Resource.DataSync__Sync_App_Resources, 'images/history.png')}); height:48px;width:48px;border-width:0px;background-repeat:no-repeat;cursor:pointer;" />
+		        		<apex:outputPanel ></apex:outputPanel>
+					</apex:pageblockSectionItem> 
+					<apex:pageblockSectionItem >
+		        		<apex:outputLabel value="Show Job History" />	
+		        		<apex:outputPanel ></apex:outputPanel>
+					</apex:pageblockSectionItem> 
+				</apex:pageBlockSection>
+                
+            </apex:pageBlock>                           
+        </apex:form>
+    </body>
+	<c:SYNC_APP_Progress />
+</apex:page>

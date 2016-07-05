@@ -1,0 +1,48 @@
+<apex:page standardController="TH1__Rule__c" extensions="TH1.RULE_CE_Rule" action="{!initPage}" sidebar="fales" tabstyle="Interaction_Rules__tab">
+<c:COMMON_JQueryLib />
+<c:COMMON_Mask />
+<apex:pageMessage summary="{!ConnectFeatureMessage}" severity="info" strength="3" rendered="{!NOT(ConnectIsLicensed)}" escape="false" />
+<apex:form rendered="{!ConnectIsLicensed}">
+<apex:sectionHeader title="Interaction Rule" subtitle="{!if(TH1__Rule__c.Id == null, 'New', TH1__Rule__c.Name)}"/>
+<!-- Replicate SF help for this page link and icon -->
+<div class="bPageTitle">
+	<div class="ptBody">
+		<c:COMMON_PageHelpLink helpUrlPath="index.htm#InteractionRulesPage.htm" showText="true"/>
+	</div>
+</div>
+<apex:actionFunction action="{!changeField}" name="changeField" rerender="criteria"/>
+
+<apex:pageMessages id="messages"/>
+
+<apex:pageBlock >
+    <apex:pageBlockButtons >
+        <apex:commandButton value="Back" action="{!URLFOR($Page.RULE_Rules)}"/>
+    </apex:pageBlockButtons>
+    
+    <apex:pageBlockSection id="rule" title="Rule" collapsible="false" columns="2">
+    	<apex:outputField value="{!rule.Name}" />
+		<apex:pageBlockSectionItem >
+			<apex:outputLabel value="Object"/>
+			<apex:outputPanel layout="block" styleClass="requiredInput">
+                <apex:outputField value="{!rule.TH1__Object_Name__c}" />
+            </apex:outputPanel>
+		</apex:pageBlockSectionItem>
+		<apex:pageBlockSectionItem rendered="{!rule.TH1__Object_Name__c != null}">
+			<apex:outputLabel value="Customer Key"/>
+			<apex:outputField value="{!rule.TH1__Customer_Key_Id_Field__c}"/>
+		</apex:pageBlockSectionItem>
+    </apex:pageBlockSection>
+    <apex:pageBlockSection id="endpoint" title="API" collapsible="false" columns="2">
+    	<apex:outputLabel value="Interaction"/>
+    	<apex:outputText value="{!apiInteraction}" />
+    	<apex:outputLabel value="URI"/>
+    	<apex:outputText value="{!apiURI}" />
+    	<apex:outputLabel value="API POST parameters"/>
+    	<apex:outputText value="{!ApiPostData}" />
+    	
+    </apex:pageBlockSection>
+    
+</apex:pageBlock>
+
+</apex:form>
+</apex:page>

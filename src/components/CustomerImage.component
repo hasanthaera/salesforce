@@ -1,0 +1,5 @@
+<apex:component >
+<apex:attribute name="image" type="String" description="header image"></apex:attribute>
+ <apex:image value="{!image}" width="50" height="50"/>
+ <apex:sectionHeader title="headerTitle"/>        
+</apex:component>

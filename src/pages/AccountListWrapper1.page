@@ -1,0 +1,21 @@
+<apex:page standardController="Account">
+    <apex:includeScript value="/lightning/lightning.out.js" />
+    <apex:stylesheet value="/resource/slds0120/assets/styles/salesforce-lightning-design-system-vf.css"/>
+    <apex:includeLightning />
+    <div class="slds" style="margin-top:10px;margin-left:10px;"> 
+        <div id="lightning" />
+    </div>
+    
+    <script>
+        var accountId = "{!$CurrentPage.parameters.id}";
+        console.log(accountId);
+        $Lightning.use("c:AccountListWrapper1", function() {
+          $Lightning.createComponent("c:AccountsList",
+                { "accountId" : accountId },
+                  "lightning",
+                  function(cmp) {
+                    // do some stuff
+               });
+        });
+    </script>
+</apex:page>

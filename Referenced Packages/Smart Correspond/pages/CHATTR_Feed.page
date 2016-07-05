@@ -1,0 +1,17 @@
+<apex:page controller="TH1.CHATTR_CO_Feed" showHeader="false" sidebar="false" >
+<c:COMMON_JQueryLib />
+<style>
+body{
+	padding: 30px;
+}
+</style>
+<script>
+$(document).ready(function (){
+	$( "a" ).click(function(){
+		return false;
+	});
+});      		
+</script>
+<apex:pageMessages />
+<chatter:feed entityid="{!$CurrentPage.parameters.recordId}" rendered="{!recordExists}"/>
+</apex:page>

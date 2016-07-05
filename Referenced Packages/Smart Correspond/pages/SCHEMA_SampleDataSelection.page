@@ -1,0 +1,144 @@
+<apex:page controller="TH1.SCHEMA_CO_SampleDataSelection" action="{!onload}"
+        tabStyle="Data_Models__tab" sidebar="false">
+	
+	<c:COMMON_JQueryLib />
+	
+	<c:COMMON_Mask />
+	
+	<apex:form >
+		<apex:actionFunction name="close" action="{!close}" >
+		</apex:actionFunction>
+		<apex:sectionHeader title="Data Model" subtitle="{!SchemaWrapper.SchemaSet.SchemaSetName}"/>
+		<apex:pageBlock title="Sample Data Select" id="sample_list" mode="edit">
+			<apex:pageBlockButtons location="top">
+				<apex:commandButton id="th_btn_reset" value="Reset To Default" action="{!resetDefaultSampleData}" reRender="sample_list,script_panel" rendered="{!AND($ObjectType.TH1__Schema_Sample_Data__c.Updateable)}" disabled="{!DataModelIsInError}"/>
+				<apex:commandButton id="th_btn_save" value="Save" action="{!saveSampleData}" onclick="showMask()" reRender="sample_list" disabled="{!DataModelIsInError}"/>
+				<apex:commandButton id="th_btn_cancel" value="Cancel" action="{!cancel}" reRender="none"/>
+			</apex:pageBlockButtons>
+			
+			<script>
+				var isClose = {!isClose};
+				$(document).ready(function () { 
+					if(isClose == true){
+						close();
+					}
+				});
+			</script>
+			
+			<apex:pageMessages />
+			
+			<apex:pageBlockSection columns="2" rendered="{!NOT(DataModelIsInError)}">
+				<apex:outputPanel />
+				<apex:outputPanel />
+				<apex:outputPanel >
+					<apex:outputLabel value="Search {!PrimaryObjectLabelPlural}: " styleClass="listViewLabel2"/>
+					<apex:inputText value="{!searchPhrase}" size="50"/>
+					<apex:commandButton id="th_btn_search" value="Search" reRender="sample_list,script_panel"/>
+				</apex:outputPanel>
+				<apex:outputPanel />
+				<apex:outputPanel />
+				<apex:outputPanel />
+				<apex:outputLabel value="{!PrimaryObjectLabelPlural} search result: " styleClass="listViewLabel1"/>
+				<apex:outputLabel value="Selected sample data list: " styleClass="listViewLabel1"/>
+				<apex:outputPanel >
+					<apex:pageBlockTable value="{!PrimaryObjectRecordList}" var="PO">
+						<apex:column headerValue="Action" width="60px" styleClass="{!HTMLENCODE(PO.Name)}">
+							<apex:commandLink id="th_link_add_row" action="{!selectSampleData}" rendered="{!$ObjectType.TH1__Schema_Sample_Data__c.Createable}">
+								<b>Add</b>
+								<apex:param name="objId" value="{!PO.RecordId}" assignTo="{!ActionId}"/>
+							</apex:commandLink>
+						</apex:column>
+						<apex:column >
+							<apex:facet name="header">
+		                        <apex:commandLink value="Name {!IF(PrimaryObjSortField=='Name',IF(PrimaryObjSortOrder=='desc','↓','↑'),'')}" action="{!sortPrimaryObjectColumn}" rerender="sample_list,script_panel">
+		                        	<apex:param name="primaryObjSortField" value="Name" assignTo="{!PrimaryObjSortField}"/>
+		                        </apex:commandLink>
+		                    </apex:facet>
+							<apex:OutputLink value="/{!PO.RecordId}">{!PO.Name}</apex:OutputLink>
+						</apex:column>
+					</apex:pageBlockTable>
+					<apex:outputPanel >
+						<apex:outputText value="no records to display" rendered="{!NoPrimaryObjectRecordsToDisplay}"/>
+					</apex:outputPanel>
+					<apex:toolbar styleClass="pagingToolBar">
+						<apex:toolbarGroup itemSeparator="none" location="left">
+							<apex:outputPanel rendered="{!totalRecords > 10}">
+								<apex:outputText >Display </apex:outputText>
+								<apex:selectList id="th_select_rows_per_page" value="{!rowsPerPage}" size="1">
+									<apex:selectOptions value="{!rowsPerPageOptionList}"/>
+									<apex:actionSupport action="{!resetCurrentPage}" event="onchange" reRender="sample_list,script_panel"/>
+								</apex:selectList>
+								<apex:outputText > records per page</apex:outputText>
+							</apex:outputPanel>
+						</apex:toolbarGroup>
+						<apex:toolbarGroup itemSeparator="none" location="right">
+							<apex:commandLink id="th_btn_previous" value="<Previous page" action="{!previousPage}"  rendered="{!hasPrevious}" reRender="sample_list,script_panel"/>
+							<apex:commandLink id="th_btn_next" value="Next page>" action="{!nextPage}" rendered="{!hasNext}" reRender="sample_list,script_panel"/>
+						</apex:toolbarGroup>
+					</apex:toolbar>
+				</apex:outputPanel>
+				<apex:outputPanel >
+					<apex:pageBlockTable value="{!SelectedSampleDataList}" var="SD">
+						<apex:column headerValue="Action" width="60px" styleClass="{!HTMLENCODE(SD.PrimaryObjectName)}">
+							<apex:commandLink id="th_link_remove_row" action="{!removeSampleData}" rendered="{!$ObjectType.TH1__Schema_Sample_Data__c.Updateable}">
+								<b>Remove</b>
+								<apex:param name="objId" value="{!SD.SchemaSampleData.TH1__Primary_Object_Record_Id__c}" assignTo="{!ActionId}"/>
+							</apex:commandLink>
+						</apex:column>
+						<apex:column headerValue="Name">
+							<apex:OutputLink value="/{!SD.SchemaSampleData.TH1__Primary_Object_Record_Id__c}">{!SD.PrimaryObjectName}</apex:OutputLink>
+						</apex:column>
+					</apex:pageBlockTable>
+					<apex:outputPanel >
+						<apex:outputText value="no sample data has been selected for this data model" rendered="{!NoSampleDataToDisplay}"/>
+					</apex:outputPanel>
+				</apex:outputPanel>
+			</apex:pageBlockSection>
+		</apex:pageBlock>
+		<apex:outputPanel id="script_panel">
+			<script>
+				jQuery(document).ready(function($){
+					$('.obj_all_rows_select').click(function() {
+						var checkBoxState = false;
+						if($(this).is(':checked')){
+							checkBoxState = true;
+						}
+						
+						$('input.obj_row_select').each(function(){
+			           		$(this).attr("checked", checkBoxState);
+						});
+					});
+					
+					$('.data_all_rows_select').click(function() {
+						var checkBoxState = false;
+						if($(this).is(':checked')){
+							checkBoxState = true;
+						}
+						
+						$('input.data_row_select').each(function(){
+			           		$(this).attr("checked", checkBoxState);
+						});
+					});
+				});
+			</script>
+		</apex:outputPanel>
+	</apex:form>
+	
+	<style>
+		.pagingToolBar {
+			background-color: #F3F3EC;
+			background-image: none;
+			border: none;
+		}
+		.listViewLabel1 {
+			font-weight: bold;
+			font-size: larger;
+			margin-left: 20px;
+			color:#555555;
+		}
+		.listViewLabel2 {
+			font-weight: bold;
+		}
+	</style>
+	
+</apex:page>

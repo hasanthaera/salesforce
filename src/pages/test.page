@@ -1,0 +1,9 @@
+<apex:page controller="test" >
+    <apex:form >
+        <apex:pageblock >
+           <apex:selectCheckboxes value="{!checkboxSelections}">
+              <apex:selectOptions value="{!options}"></apex:selectOptions>
+           </apex:selectCheckboxes>
+        </apex:pageblock>
+     </apex:form>
+</apex:page>

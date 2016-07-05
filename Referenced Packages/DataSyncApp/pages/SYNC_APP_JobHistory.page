@@ -1,0 +1,216 @@
+<!-- 
+ *************************************************************
+ * Description      : VF Page for Listing job histories
+ * @author          : Thilanka Dileepa Kumarasingha
+ * @since           : 08 August 2014
+ ************************************************************* 
+ -->
+
+<apex:page controller="DataSync.SYNC_APP_JobHistory_Controller" tabStyle="ABSI_Data_Refresh__tab" >
+	<!-- js files -->	
+	<apex:includeScript value="{!URLFOR($Resource.DataSync__Sync_App_Resources, 'js/jquery-1.11.1.min.js')}"/>
+	<apex:includeScript value="{!URLFOR($Resource.DataSync__Sync_App_Resources, 'js/jquery-ui.js')}"/>
+	
+	<!-- css files -->
+	<apex:stylesheet value="{!URLFOR($Resource.DataSync__Sync_App_Resources, 'css/jquery-ui.css')}"/>
+	
+	<script>
+		
+		var progressLabel = $( ".progress-label" );
+		var progressbar = $( "#progressbar" );
+		
+		function openProgressDialog( sessionId, jobId ) {
+			var dialog = $( "#dialog" ).dialog({
+			        autoOpen: false,
+			        closeOnEscape: true,
+			        resizable: true,
+			        width:'600px',
+			        open: function() {
+			        	progress();			        	
+			        	checkJob(sessionId, jobId);
+	        		},		        		        
+			        beforeClose: function() {
+			          
+			        }
+			});
+			
+			dialog.dialog( "open" );
+		}
+		
+		function checkStatus() {
+			var finished = $("input[id*='selectedJobFinished']").val();			
+			progressLabel = $( ".progress-label" );
+			if(finished=='true') {
+				progressLabel.text("The process completed. Please refresh the page to see more details");
+				progressbar.progressbar({ value: 100 });
+			} else {
+				var lastMessage = $("input[id*='lastMessage']").val();				
+				progressLabel.text(lastMessage);
+				// send this only it is open
+				if($( "#dialog" ).dialog( "isOpen" )) {
+					setTimeout(function() {
+						var selectedSessionId = $("input[id*='selectedSessionId']").val()
+						var selectedJobId = $("input[id*='selectedJobId']").val()
+						
+	      				checkJob(selectedSessionId,selectedJobId);
+					}, 5000);
+				}
+			}
+		}
+		
+		function progress() {			
+			progressbar = $( "#progressbar" );
+			progressbar.progressbar({
+      			value: false
+    		});
+    		
+    		progressbar.css('width',"100%");
+		}
+				
+		$(function() {			
+		    $(".dateField").datepicker({
+		      showOn: "button",
+		      buttonImage: "{!$Resource.Calendar}",
+		      buttonImageOnly: true
+		    });		    
+		});
+	</script>
+	
+	<style type="text/css">
+        .custPopup{
+            background-color: white;
+            border-width: 2px;
+            border-style: solid;
+            z-index: 9999;
+            left: 40%;
+            padding:10px;
+            position: absolute;
+            /* These are the 3 css properties you will need to change so the popup 
+            displays in the center of the screen. First set the width. Then set 
+            margin-left to negative half of what the width is. You can add 
+            the height property for a fixed size pop up if you want.*/
+            width: 700px;
+            margin-left: -110px;
+            top:150px;
+        }
+        
+        .popupBackground{
+            background-color:black;
+            opacity: 0.20;
+            filter: alpha(opacity = 20);
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+            z-index: 9998;
+        }
+        
+	</style>
+	
+	<apex:sectionHeader title="Job History" />
+	<body>
+		<apex:form >
+			<!-- Error Page Block Section -->	
+			<apex:pageBlock id="pgError" mode="edit">
+				
+				<!-- Error Page Block Section -->   
+		        <apex:outputPanel id="messagePanel"> 
+			    	<apex:pageMessages />
+			    </apex:outputPanel>
+				
+				<apex:pageBlockSection columns="1">
+	            	<apex:pageBlockSectionItem >
+	            		<apex:outputLabel value="Job Id"></apex:outputLabel>
+	            		<apex:inputText value="{!jobId}" label="Job Id :"></apex:inputText>	            		
+	            	</apex:pageBlockSectionItem>
+	            	<apex:pageBlockSectionItem >
+	            		<apex:outputLabel value="From Date"></apex:outputLabel>
+	            		<apex:inputText styleClass="dateField" id="fromDate" value="{!fromDate}"></apex:inputText>
+	            	</apex:pageBlockSectionItem>
+	            	<apex:pageBlockSectionItem >
+	            		<apex:outputLabel value="To Date"></apex:outputLabel>
+	            		<apex:inputText styleClass="dateField" id="toDate" value="{!toDate}"></apex:inputText>	            		
+	            	</apex:pageBlockSectionItem>
+	            	<apex:pageBlockSectionItem >	 
+		            	<apex:outputLabel value=" "></apex:outputLabel>          		   
+		            	<apex:commandButton status="progressStatus" action="{!searchJobs}" reRender="resultsGrid" value="Search"></apex:commandButton>
+	            	</apex:pageBlockSectionItem>         	
+				</apex:pageBlockSection>					
+			</apex:pageBlock>  
+			
+			<!-- UI Components Page Block Section -->					
+			<apex:pageBlock mode="edit">
+				<!-- Execute Details -->
+	            <apex:pageBlockSection columns="1">
+	            	<apex:pageBlockSectionItem >
+	            		<apex:outputPanel layout="block" style="overflow:scroll; height:500px;" >
+		            		<apex:pageBlockTable id="resultsGrid" value="{!resultsList}" var="result" width="100%" border="0" cellpadding="0" cellspacing="0">
+		            			<apex:column headerValue="Job Id" value="{!result.jobID}" />
+								<apex:column headerValue="Start Time" value="{!result.startTime}" />
+								<apex:column headerValue="End Time" value="{!result.endTime}" />
+								<apex:column headerValue="Job Status" value="{!result.jobStatus}" />
+								<apex:column >
+				                	<apex:facet name="header">Messages</apex:facet>
+				                	<apex:outputLabel value="{!result.errorMessages}" escape="false" />
+							    	<apex:commandLink rendered="{!!result.isShort}" action="{!showPopup}" value="[more]" reRender="errPopup" >
+										<apex:param name="firstParam" value="{!result.errorMessagesLong}" assignTo="{!tmpErrMsg}" />
+									</apex:commandLink>
+					            </apex:column>	
+					            <apex:column headerValue="View Results">
+					            	<apex:commandLink rendered="{!(result.jobStatus!='Started' && result.jobStatus!='Update Started')}" action="{!viewMore}" value="View Results">
+					            		<apex:param name="jobId" value="{!result.jobID}" assignTo="{!selectedJobId}"/>					            		
+					            	</apex:commandLink>
+					            	<apex:outputPanel rendered="{!(result.jobStatus=='Started' || result.jobStatus=='Update Started')}" layout="false">
+					            		<a class="viewProgress" onclick="openProgressDialog('{!result.sessionId}','{!result.jobID}')" href="javascript:void(0);">View Progress</a>
+					            	</apex:outputPanel>
+					            </apex:column>
+		            		</apex:pageBlockTable>
+		            	</apex:outputPanel>
+	            	</apex:pageBlockSectionItem>
+	            	<apex:commandButton action="{!back}" value="Back" />
+	            </apex:pageBlockSection>
+			</apex:pageBlock>	
+		
+		</apex:form>
+		
+		<apex:form >
+		<!-- Criteria Generation POP UP -->
+		<apex:outputPanel id="errPopup">
+	    	<apex:outputPanel styleClass="popupBackground" layout="block" rendered="{!displayPopUp}"/>
+	        <apex:outputPanel styleClass="custPopup" layout="block" rendered="{!displayPopUp}" style="overflow:scroll; height:300px;" >	        	
+			        <apex:pageBlock >
+			        	<apex:outputText value="{!tmpErrMsg}" escape="false" />
+			        	<apex:pageBlockButtons >
+				        	<apex:commandButton value="Close" action="{!closePopup}" rerender="errPopup"></apex:commandButton>
+			        	</apex:pageBlockButtons>
+			        </apex:pageBlock>		        
+	        </apex:outputPanel>
+	    </apex:outputPanel>
+
+		<apex:outputPanel layout="block" id="varPanel">
+			<apex:inputHidden id="lastMessage" value="{!lastMessage}"></apex:inputHidden>
+			<apex:inputHidden id="selectedJobFinished" value="{!selectedJobFinished}"></apex:inputHidden>
+			<apex:inputHidden id="selectedSessionId" value="{!selectedSessionId}"></apex:inputHidden>
+			<apex:inputHidden id="selectedJobId" value="{!selectedJobId}"></apex:inputHidden>
+		</apex:outputPanel>
+
+		<apex:actionFunction reRender="varPanel" oncomplete="checkStatus()" action="{!getResults}" name="checkJob" >
+		   	<apex:param name="firstParam" assignTo="{!selectedSessionId}" value="" />
+	      	<apex:param name="secondParam" assignTo="{!selectedJobId}" value="" />
+	   	</apex:actionFunction>
+	    
+	    </apex:form>
+	    
+	    <c:SYNC_APP_Progress />
+
+	    <!-- progress dialog -->
+	    <div id="dialog" title="Job Status">
+		  <div class="progress-label">Processing...</div>
+		  <div style="padding:2px;"></div>
+		  <div id="progressbar"></div>		  
+		</div>
+		<!-- end progress dialog -->
+	</body>
+	
+</apex:page>

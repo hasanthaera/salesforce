@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomTab xmlns="http://soap.sforce.com/2006/04/metadata">
+    <icon>ONE_Correspond/ONE_Correspond_Tab_Icon.jpg</icon>
+    <label>Interaction Rules</label>
+    <mobileReady>false</mobileReady>
+    <motif>Custom293: TV Widescreen</motif>
+    <page>RULE_Rules</page>
+</CustomTab>

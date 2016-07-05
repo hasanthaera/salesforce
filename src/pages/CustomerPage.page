@@ -1,0 +1,21 @@
+<apex:page showHeader="true" standardController="Customer__c" tabStyle="Customer__c">
+<c:CustomerImage image="{!$Resource.image1}"></c:CustomerImage>
+   <apex:form >
+    <apex:pageBlock title="Hello {!$User.FirstName}!">
+        You are viewing the Customer {!Customer__c.name}. 
+        <apex:pageBlockSection columns="1">
+            <apex:outputField value="{!Customer__c.name}"/>
+            <apex:outputField value="{!Customer__c.Country__c}"/>
+            <apex:outputField value="{!Customer__c.Age__c}"/>
+            <apex:inputField value="{!Customer__c.Address__c}"/>
+            <apex:outputField value="{!Customer__c.Maximum_Budget__c}"/>
+            <apex:inputField value="{!Customer__c.NID_Number__c}"/>
+            <apex:inputField value="{!Customer__c.Country__c}"/>
+
+         </apex:pageBlockSection> 
+         <apex:pageBlockButtons >
+            <apex:commandButton action="{!save}" value="Save"/>
+        </apex:pageBlockButtons>
+    </apex:pageBlock>
+ </apex:form> 
+</apex:page>

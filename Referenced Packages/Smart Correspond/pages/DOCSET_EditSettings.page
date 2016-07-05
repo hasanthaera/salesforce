@@ -1,0 +1,749 @@
+<apex:page standardController="TH1__Document_Setting__c" extensions="TH1.DOCSET_CE_EditSettings" action="{!onload}"
+         sidebar="false" id="th_page" tabStyle="TH1__Document_Setting__c">
+	<apex:pageMessage summary="{!TemplateDesignerFeatureMessage}" severity="info" strength="3" rendered="{!NOT(TemplateDesignerIsLicensed)}" escape="false" />
+	<apex:outputPanel rendered="{!TemplateDesignerIsLicensed}">
+    <c:COMMON_JQueryLib />
+    <c:COMMON_JQueryUILib />
+    <c:COMMON_Bootstrap />
+    <c:COMMON_MustacheLib />
+    <c:REMOTE_Documents />
+    <c:EMAIL_DocumentAttachmentsDialog />
+<script type="text/javascript" src="{!URLFOR($Resource.ThunderheadResources, '/scripts/formValidationUtil.js')}"></script>
+<style>
+    .Custom150Tab .tertiaryPalette, .individualPalette .Custom150Block .tertiaryPalette, .layoutEdit .individualPalette .Custom150Block .tertiaryPalette {
+        background-color: gray;
+        border-color: gray;
+    }
+    .Custom214Tab .tertiaryPalette, .individualPalette .Custom214Block .tertiaryPalette, .layoutEdit .individualPalette .Custom214Block .tertiaryPalette {
+        background-color: gray;
+        border-color: gray;
+    }
+    .th-textbox  {
+        width : 300px;
+        margin-right: 10px !important;
+    }
+    .th-textbox-wide {
+        width : 500px;
+    }
+    .docusignbody{
+        height: 70px;
+    }
+    #th_link_clearattachments{
+        color: #015BA7;
+        cursor: pointer;
+    }
+</style>
+<c:COMMON_Mask />
+<script type="text/javascript">
+	$(function() {
+            Thunderhead.SF.require('docedt/email-attachments-dialog').done(function(EmailAttachmentsDialog) {
+		        var attached = [];
+		        var selectedIds = window.JSON.parse('{!JSENCODE(SelectedDocIdString)}');
+
+		        //On load of the page, if the doc setting has attachments, pre-populate the hidden id textbox & displayed attachment names
+		        //Copy the ids to a local array to pass to the dialog
+		        if (selectedIds != undefined) {
+		            attached.push.apply(attached, selectedIds);
+		            $('.selectedIds').attr('value', selectedIds.join());
+		            $('#th_txt_emailattachments').attr('value', ('{!JSENCODE(Attachments)}'));
+		        }
+
+		        var documentDialog = new EmailAttachmentsDialog('document-dialog').on('SELECTED', function(docs) {
+                    //On 'Attach' from the dialog, overwrite attachment array with the new selected ids
+                    attached = [];
+                    var ids = '';
+                    var docNames = '';
+                    if (docs !== null) {
+                        attached.push(docs[0].Id);
+                        ids = docs[0].Id;
+                        docNames = docs[0].Name;
+                        for (var i=1; i<docs.length; i++){
+                            ids += ',' + docs[i].Id;
+                            docNames += ', ' + docs[i].Name;
+                            attached.push(docs[i].Id);
+                        }
+                    }
+                    //Populate the id & name textboxes with the new values
+                    $('.selectedIds').attr('value', ids);
+                    $('#th_txt_emailattachments').attr('value', docNames);
+                });
+
+
+
+		        $(document).on('click', '#th_btn_openattachments', function(e){
+		            e.preventDefault();
+		            documentDialog.show(attached);
+		        });
+
+		        $(document).on('click', '#th_link_clearattachments', function(e){
+		            attached = [];
+		            $('.selectedIds').attr('value', '');
+		            $('#th_txt_emailattachments').attr('value', '');
+		        });
+
+            });
+      });
+
+    function populateEmailAttachments(idString, attachments) {
+        var selectedIds = JSON.parse(idString);
+        if (selectedIds.length > 0) {
+            $('.selectedIds').attr('value', selectedIds.join());
+            $('#th_txt_emailattachments').attr('value', attachments);
+        }
+    }
+</script>
+<apex:outputPanel id="pageContainer">
+
+    <apex:form id="th_form">
+
+        <apex:actionFunction name="changeFields" action="{!changeFields}" reRender="pageContainer, script_panel" oncomplete="populateEmailAttachments('{!SelectedDocIdString}', '{!JSENCODE(Attachments)}');hideMask();"/>
+
+        <apex:inputHidden value="{!TH1__Document_Setting__c.TH1__Primary_Object__c}" />
+        <apex:inputHidden value="{!TH1__Document_Setting__c.TH1__Thunderhead_channel_type__c}" />
+        <apex:inputHidden value="{!TH1__Document_Setting__c.TH1__Document_Data_Model_Name__c}" />
+        <apex:inputHidden value="{!TH1__Document_Setting__c.TH1__Document_Data_Model__c}" />
+        <apex:inputHidden value="{!TH1__Document_Setting__c.TH1__Do_Not_Merge_PDFs__c}" />
+        <apex:inputHidden value="{!TH1__Document_Setting__c.TH1__Last_modified_version_major__c}" />
+        <apex:sectionHeader title="Document Setting Edit" subtitle="{!IF(insertIsActive,'New Document Setting',TH1__Document_Setting__c.Name)}"/>
+        <!-- Replicate SF help for this page link and icon -->
+        <div class="bPageTitle" style="padding:0px;">
+            <div class="ptBody">
+                <c:COMMON_PageHelpLink helpUrlPath="index.htm#{!IF(insertIsActive,'NewDocSetting.htm','EditDocSetting.htm')}" showText="true"/>
+            </div>
+        </div>
+        <apex:pageBlock title="Document Setting Edit" mode="edit">
+            <apex:pageMessage summary="The Data Model has been updated in the Template {!TH1__Document_Setting__c.TH1__Template_name__c}; this Document Setting has been updated and needs to be saved." severity="warning" strength="2" rendered="{!primaryObjectChangedOnEdit}"/>
+            <apex:pageMessages />
+            <apex:pageBlockButtons >
+                <apex:commandButton id="th_btn_save" action="{!saveSetting}" rendered="{!ChannelSupported}" value="Save"/>
+                <apex:commandButton id="th_btn_cancel" action="{!cancelSetting}" value="Cancel" immediate="true"/>
+            </apex:pageBlockButtons>
+            <!-- Information section -->
+            <apex:pageBlockSection title="Information" columns="2" collapsible="false">
+                <apex:inputText id="th_txt_name" value="{!TH1__Document_Setting__c.Name}" maxlength="80" styleclass="th-textbox requiredIndicator"/>
+                <apex:inputField id="th_txt_desc" value="{!TH1__Document_Setting__c.TH1__Description__c}" styleclass="th-textbox"/>
+                <apex:inputField id="th_check_disabled" value="{!TH1__Document_Setting__c.TH1__Is_disabled__c}"/>
+            </apex:pageBlockSection>
+            <!--  Document generation section -->
+            <apex:pageBlockSection title="Document Generation" columns="2" collapsible="false">
+                <apex:pageBlockSectionItem >
+                    <apex:outputLabel value="{!$ObjectType.TH1__Document_Setting__c.Fields.TH1__Template_name__c.Label}"/>
+                    <apex:selectList id="th_select_template" value="{!TH1__Document_Setting__c.TH1__Template_id__c}" size="1" styleclass="templateDropdown th-textbox requiredIndicator">
+                        <apex:selectOptions value="{!templateOptionList}"/>
+                        <apex:actionSupport event="onchange" action="{!changeTemplate}" reRender="pageContainer, script_panel" onsubmit="showMask();" oncomplete="populateEmailAttachments('{!SelectedDocIdString}', '{!JSENCODE(Attachments)}');onTemplateChangeComplete();"/>
+                    </apex:selectList>
+                </apex:pageBlockSectionItem>
+                <apex:pageBlockSectionItem >
+                    <apex:outputLabel value="{!$ObjectType.TH1__Document_Setting__c.Fields.TH1__Thunderhead_channel_name__c.Label}"/>
+                    <apex:selectList id="th_select_channel" value="{!TH1__Document_Setting__c.TH1__Thunderhead_channel_code__c}" size="1" styleclass="channelDropdown th-textbox requiredIndicator">
+                        <apex:selectOptions value="{!templateChannelList}"/>
+                        <apex:actionSupport event="onchange" action="{!changeChannel}" reRender="pageContainer, script_panel" onsubmit="showMask();" oncomplete="onTemplateChangeComplete();"/>
+                    </apex:selectList>
+                </apex:pageBlockSectionItem>
+                <apex:pageBlockSectionItem >
+                    <apex:outputLabel value="{!$ObjectType.TH1__Document_Setting__c.Fields.TH1__Primary_Object__c.Label}" />
+                    <apex:inputText value="{!primaryObject}" id="th_txt_primary_object" styleclass="th-textbox" disabled="true" />
+                </apex:pageBlockSectionItem>
+                <apex:pageBlockSectionItem >
+                    <apex:outputLabel value="Data Model" />
+                    <apex:inputText value="{!TH1__Document_Setting__c.TH1__Document_Data_Model_Name__c}" id="th_txt_data_model" styleclass="th-textbox" disabled="true" />
+                </apex:pageBlockSectionItem>
+                <apex:inputField id="th_check_showpdf" value="{!TH1__Document_Setting__c.TH1__Show_PDF__c}" rendered="{!AND(NOT(ChannelSupportsEmail), ChannelSupported)}" />
+                <apex:pageBlockSectionItem rendered="{!ChannelSupportsMerge}">
+                    <apex:outputLabel value="Merge PDFs"/>
+                    <apex:inputCheckbox id="th_check_mergepdfs" value="{!MergePDFs}" />
+                </apex:pageBlockSectionItem>
+            </apex:pageBlockSection>
+            <apex:outputPanel rendered="{!ChannelSupported}">
+	            <!-- Widget settings -->
+	            <apex:pageBlockSection title="Widget Settings" columns="2" collapsible="false">
+	                <apex:pageBlockSectionItem >
+	                   	<apex:outputLabel value="{!$ObjectType.TH1__Document_Setting__c.Fields.TH1__Filter_field_name__c.Label}"/>
+	                   	<apex:selectList id="th_select_filterby" value="{!TH1__Document_Setting__c.TH1__Filter_field_name__c}" size="1" styleclass="filterDropdown th-textbox">
+	                       	<apex:selectOptions value="{!filterOptionList}"/>
+	                   	</apex:selectList>
+	                </apex:pageBlockSectionItem>
+	                <apex:inputText id="th_txt_filterfieldvalue" value="{!TH1__Document_Setting__c.TH1__Filter_field_value__c}" styleclass="filterFieldValue th-textbox"/>
+	            	<apex:inputField id="th_check_showgenerate" value="{!TH1__Document_Setting__c.TH1__Generate_document__c}"/>
+	            	<apex:inputField id="th_check_showedit" value="{!TH1__Document_Setting__c.TH1__Editable__c}" rendered="{!DraftEditingIsLicensed}" styleClass="draftEnableCheckbox"/>
+	              	<apex:inputField id="th_check_showcollab" value="{!TH1__Document_Setting__c.TH1__Collaborate_Document__c}" rendered="{!CanCollaborate}"/>
+	            </apex:pageBlockSection>
+	            <!--  Draft Editing -->
+	            <apex:pageBlockSection title="Draft Editor Settings" columns="1" collapsible="false" id="draft_editing_1">
+	          		<apex:pageMessage summary="{!DraftEditingFeatureMessage}" severity="info" strength="3" rendered="{!NOT(DraftEditingIsLicensed)}" escape="false" />
+	               <apex:pageBlockSectionItem rendered="{!DraftEditingIsLicensed}">
+	                    <apex:outputLabel value="Draft Name"/>
+	                    <apex:outputPanel id="draftNamePanel">
+	                        <apex:actionFunction name="clearDraftName" action="{!clearDraftName}" reRender="draftNamePanel" oncomplete="hideMask();"/>
+	                        <apex:actionFunction name="cancelDraftName" action="{!cancelDraftName}" reRender="draftNamePanel"/>
+	                            <apex:inputText id="th_txt_draftname" value="{!TH1__Document_Setting__c.TH1__Draft_name__c}" maxlength="255" rendered="{!TH1__Document_Setting__c.TH1__Draft_name_field__c == ''}" styleclass="th-textbox-wide draftName"/>
+	                            <apex:inputText id="th_txt_draftname_field" value="{!TH1__Document_Setting__c.TH1__Draft_name_field__c}" rendered="{!TH1__Document_Setting__c.TH1__Draft_name_field__c != ''}" styleclass="th-textbox-wide draftNamefield" disabled="true"/>
+	                            <c:COMMON_DynamicFieldPopup popId="draft_pop" updateActionMethod="changeFields" clearActionMethod="clearDraftName" cancelActionMethod="cancel_cancelDraftName"/>
+	                            <div id="draft_pop" class="pop" style="display: none;">
+	                                <apex:selectList id="th_select_draft_name" value="{!TH1__Document_Setting__c.TH1__Draft_name_field__c}" size="1" styleclass="th-textbox">
+	                                    <apex:selectOptions value="{!emailFieldList}"/>
+	                                </apex:selectList>
+	                            </div>
+	                    </apex:outputPanel>
+	                </apex:pageBlockSectionItem>
+	                <apex:inputField id="th_check_retain" value="{!TH1__Document_Setting__c.TH1__Is_generate_and_retain__c}" rendered="{!DraftEditingIsLicensed}" styleclass="draftRetainCheckbox"/>
+	               	<apex:inputField id="th_check_showgeneratedraft" value="{!TH1__Document_Setting__c.TH1__Generate_draft__c}" rendered="{!DraftEditingIsLicensed}" styleClass="generateDraftCheckbox"/>
+	                <apex:inputField id="th_check_showcollabdraft" value="{!TH1__Document_Setting__c.TH1__Collaborate_Draft__c}" rendered="{!AND(DraftEditingIsLicensed, CanCollaborate)}" styleClass="collaborateDraftCheckbox"/>
+	            </apex:pageBlockSection>
+	            <!--  Field update section -->
+	            <apex:pageBlockSection title="Field Update" columns="2" collapsible="false" id="update_field">
+	                <apex:pageBlockSectionItem >
+	                    <apex:outputLabel value="Field to Update"/>
+	                    <apex:selectList id="th_select_fieldtoupdate" value="{!TH1__Document_Setting__c.TH1__Field_to_update_API_name__c}" size="1" styleclass="th-textbox">
+	                        <apex:selectOptions value="{!fieldToUpdateOptionList}"/>
+	                        <apex:actionSupport event="onchange" action="{!changeFieldToUpdate}" onsubmit="showMask();" oncomplete="hideMask();" reRender="update_value"/>
+	                    </apex:selectList>
+	                </apex:pageBlockSectionItem>
+	                <apex:pageBlockSectionItem >
+	                    <apex:outputLabel value="{!$ObjectType.TH1__Document_Setting__c.Fields.TH1__Field_to_update_value__c.Label}"/>
+	                    <apex:outputPanel id="update_value">
+	                        <apex:inputCheckbox id="th_check_fieldtoupdateValue" value="{!fieldToUpdateBooleanValue}" rendered="{!checkBoxFieldIsSelected}"/>
+	                        <apex:inputText id="th_txt_fieldtoupdateValue" value="{!TH1__Document_Setting__c.TH1__Field_to_update_value__c}" rendered="{!OR(textFieldIsSelected, noUpdateFieldIsSelected)}" styleclass="th-textbox" disabled="{!noUpdateFieldIsSelected}"/>
+	                        <apex:inputTextarea id="th_txta_fieldtoupdateValue" value="{!TH1__Document_Setting__c.TH1__Field_to_update_value__c}" cols="40" rows="4" rendered="{!textAreaFieldIsSelected}" />
+	                        <apex:selectList id="th_select_fieldtoupdateValue" value="{!TH1__Document_Setting__c.TH1__Field_to_update_value__c}" size="1" rendered="{!picklistFieldIsSelected}" styleclass="th-textbox">
+	                            <apex:selectOptions value="{!fieldToUpdatePicklistOptions}"/>
+	                        </apex:selectList>
+	                        <apex:outputText value="{!TH1__Document_Setting__c.TH1__Field_to_update_value__c}" rendered="{!OR(dateFieldIsSelected, datetimeFieldIsSelected, userReferenceFieldIsSelected)}"/>
+	                    </apex:outputPanel>
+	                </apex:pageBlockSectionItem>
+	                <apex:inputField id="th_check_fieldtoupdatenotifyerror" value="{!TH1__Document_Setting__c.TH1__Field_to_update_notify_errors__c}" />
+	            </apex:pageBlockSection>
+	            <!--  Storage section -->
+	            <apex:pageBlockSection title="Storage" columns="1" collapsible="false" id="storage_section" rendered="{!ObjectSupportsStorage}">
+	                <apex:inputField id="th_select_storage" value="{!TH1__Document_Setting__c.TH1__Storage__c}" styleclass="storageDropdown th-textbox-wide" />
+	                <apex:pageBlockSectionItem >
+	                    <apex:outputLabel value="Storage Filename" for="storageName"/>
+	                    <apex:outputPanel id="storageNamePanel">
+	                        <apex:actionFunction name="clearStorage" action="{!clearStorage}" reRender="storageNamePanel" oncomplete="hideMask();"/>
+	                        <apex:actionFunction name="cancelStorage" action="{!cancelStorage}" reRender="th_select_storage_file"/>
+	                        <div class="requiredInput">
+	                            <div class="storageFileNameBlockIdentifier requiredBlock" />
+	                            <apex:inputText id="th_txt_storagefilename" value="{!TH1__Document_Setting__c.TH1__Storage_file_name__c}" maxlength="{!MaxFilenameLength}" rendered="{!TH1__Document_Setting__c.TH1__Storage_file_name_field__c == ''}" styleclass="th-textbox-wide storageFilename"/>
+	                            <apex:inputText id="th_txt_storagefilename_field" value="{!TH1__Document_Setting__c.TH1__Storage_file_name_field__c}" rendered="{!TH1__Document_Setting__c.TH1__Storage_file_name_field__c != ''}" styleclass="th-textbox-wide storageFilenamefield" disabled="true"/>
+	                            <c:COMMON_DynamicFieldPopup popId="storage_pop" updateActionMethod="changeFields" clearActionMethod="clearStorage" cancelActionMethod="cancel_cancelStorage"/>
+	                            <div id="storage_pop" class="pop" style="display: none;">
+	                                <apex:selectList id="th_select_storage_file" value="{!TH1__Document_Setting__c.TH1__Storage_file_name_field__c}" size="1" styleclass="th-textbox">
+	                                    <apex:selectOptions value="{!emailFieldList}"/>
+	                                </apex:selectList>
+	                            </div>
+	                        </div>
+	                    </apex:outputPanel>
+	                </apex:pageBlockSectionItem>
+	            </apex:pageBlockSection>
+	            <!--  Email section -->
+	            <apex:pageBlockSection title="Email" columns="1" collapsible="false" rendered="{!ChannelSupportsEmail}" id="email_section">
+	                <apex:inputField id="th_check_sendemail" value="{!TH1__Document_Setting__c.TH1__Email_enabled__c}" styleClass="emailEnabledCheck" />
+	                <apex:pageBlockSectionItem >
+	                    <apex:outputLabel value="Email From"/>
+	                    <apex:selectList id="th_select_fromaddress" value="{!TH1__Document_Setting__c.TH1__Org_Wide_Email_Address_Id__c}" size="1" styleclass="th-email-fromaddress th-textbox-wide">
+	                        <apex:selectOptions value="{!EmailFromAddressList}"/>
+	                    </apex:selectList>
+	                </apex:pageBlockSectionItem>
+	                <apex:pageBlockSectionItem >
+	                    <apex:outputLabel value="Email To"/>
+	                    <apex:outputPanel id="email_to_panel">
+	                        <apex:actionFunction name="clearEmailTo" action="{!clearEmailTo}" reRender="email_to_panel" oncomplete="hideMask();"/>
+	                        <apex:actionFunction name="cancelEmailTo" action="{!cancelToRecipient}" reRender="th_select_emailto"/>
+	                        <apex:inputText id="th_txt_emailto_field" value="{!emailToRecipient.TH1__Field_name__c}" rendered="{!emailToRecipient.TH1__Field_name__c != ''}" styleclass="th-dynamic-email th-textbox-wide" disabled="true"/>
+	                        <apex:inputText id="th_txt_emailto" value="{!emailToRecipient.TH1__Static_text__c}" rendered="{!emailToRecipient.TH1__Field_name__c == ''}" styleclass="th-static-email th-textbox-wide" maxlength="255"/>
+	                        <c:COMMON_DynamicFieldPopup popId="email_to_pop" updateActionMethod="changeFields" clearActionMethod="clearEmailTo" cancelActionMethod="cancel_cancelEmailTo"/>
+	                        <div id="email_to_pop" class="pop" style="display: none;">
+	                            <apex:selectList id="th_select_emailto" value="{!emailToRecipient.TH1__Field_name__c}" size="1" styleclass="th-textbox">
+	                                <apex:selectOptions value="{!emailFieldList}"/>
+	                            </apex:selectList>
+	                        </div>
+	                    </apex:outputPanel>
+	                </apex:pageBlockSectionItem>
+	                <apex:pageBlockSectionItem >
+	                    <apex:outputLabel value="Email Cc"/>
+	                    <apex:outputPanel id="email_cc_panel">
+	                        <apex:actionFunction name="clearEmailCc" action="{!clearEmailCc}" reRender="email_cc_panel" oncomplete="hideMask();"/>
+	                        <apex:actionFunction name="cancelEmailCc" action="{!cancelCcRecipient}" reRender="th_select_emailcc"/>
+	                        <apex:inputText id="th_txt_emailcc_field" value="{!emailCcRecipient.TH1__Field_name__c}" rendered="{!emailCcRecipient.TH1__Field_name__c != ''}" styleclass="th-dynamic-email th-textbox-wide" disabled="true"/>
+	                        <apex:inputText id="th_txt_emailcc" value="{!emailCcRecipient.TH1__Static_text__c}" rendered="{!emailCcRecipient.TH1__Field_name__c == ''}" styleclass="th-static-email th-textbox-wide" maxlength="255"/>
+	                        <c:COMMON_DynamicFieldPopup popId="email_cc_pop" updateActionMethod="changeFields" clearActionMethod="clearEmailCc" cancelActionMethod="cancel_cancelEmailCc"/>
+	                        <div id="email_cc_pop" class="pop" style="display: none;">
+	                            <apex:selectList id="th_select_emailcc" value="{!emailCcRecipient.TH1__Field_name__c}" size="1" styleclass="th-textbox">
+	                                <apex:selectOptions value="{!emailFieldList}"/>
+	                            </apex:selectList>
+	                        </div>
+	                    </apex:outputPanel>
+	                </apex:pageBlockSectionItem>
+	                <apex:pageBlockSectionItem >
+	                    <apex:outputLabel value="Email Bcc"/>
+	                    <apex:outputPanel id="email_bcc_panel">
+	                        <apex:actionFunction name="clearEmailBcc" action="{!clearEmailBcc}" reRender="email_bcc_panel" oncomplete="hideMask();"/>
+	                        <apex:actionFunction name="cancelEmailBcc" action="{!cancelBccRecipient}" reRender="th_select_emailbcc"/>
+	                        <apex:inputText id="th_txt_emailbcc_field" value="{!emailBccRecipient.TH1__Field_name__c}" rendered="{!emailBccRecipient.TH1__Field_name__c != ''}" styleclass="th-dynamic-email th-textbox-wide" disabled="true"/>
+	                        <apex:inputText id="th_txt_emailbcc" value="{!emailBccRecipient.TH1__Static_text__c}" rendered="{!emailBccRecipient.TH1__Field_name__c == ''}" styleclass="th-static-email th-textbox-wide" maxlength="255"/>
+	                        <c:COMMON_DynamicFieldPopup popId="email_bcc_pop" updateActionMethod="changeFields" clearActionMethod="clearEmailBcc" cancelActionMethod="cancel_cancelEmailBcc"/>
+	                        <div id="email_bcc_pop" class="pop" style="display: none;">
+	                            <apex:selectList id="th_select_emailbcc" value="{!emailBccRecipient.TH1__Field_name__c}" size="1" styleclass="th-textbox">
+	                                <apex:selectOptions value="{!emailFieldList}"/>
+	                            </apex:selectList>
+	                        </div>
+	                    </apex:outputPanel>
+	                </apex:pageBlockSectionItem>
+	                <apex:pageBlockSectionItem >
+	                    <apex:outputLabel value="Email Subject"/>
+	                    <apex:outputPanel id="email_subject_panel">
+	                        <apex:actionFunction name="clearEmailSubject" action="{!clearEmailSubject}" reRender="email_subject_panel" oncomplete="hideMask();"/>
+	                        <apex:actionFunction name="cancelEmailSubject" action="{!cancelEmailSubject}" reRender="th_select_emailsubject"/>
+	                        <apex:inputText id="th_txt_emailsubject_field" value="{!TH1__Document_Setting__c.TH1__Email_subject_field__c}" rendered="{!TH1__Document_Setting__c.TH1__Email_subject_field__c != ''}" styleclass="th-dynamic-email th-textbox-wide" disabled="true" />
+	                        <apex:inputText id="th_txt_emailsubject" value="{!TH1__Document_Setting__c.TH1__Email_subject__c}" maxLength="245" rendered="{!TH1__Document_Setting__c.TH1__Email_subject_field__c == ''}" styleclass="th-static-email th-textbox-wide" />
+	                        <c:COMMON_DynamicFieldPopup popId="email_subject_pop" updateActionMethod="changeFields" clearActionMethod="clearEmailSubject" cancelActionMethod="cancel_cancelEmailSubject"/>
+	                        <div id="email_subject_pop" class="pop" style="display: none;">
+	                            <apex:selectList id="th_select_emailsubject" value="{!TH1__Document_Setting__c.TH1__Email_subject_field__c}" size="1" styleclass="th-textbox">
+	                                <apex:selectOptions value="{!textFieldList}"/>
+	                            </apex:selectList>
+	                        </div>
+	                    </apex:outputPanel>
+	                </apex:pageBlockSectionItem>
+	               <apex:pageBlockSectionItem >
+	                   <apex:outputLabel value="Document Attachments"/>
+	                   <apex:outputPanel id="email_attachments_panel">
+	                       <input id="th_txt_emailattachments" value="" type="text" disabled="true" class="th-dynamic-email th-textbox-wide"/>
+	                       <span id="open_attachment_popup">
+	                           <img src="/s.gif" class="lookupIcon" id="th_btn_openattachments" onblur="this.className = 'lookupIcon';" onfocus="this.className = 'lookupIconOn';"
+	                               onmouseout="this.className = 'lookupIcon';this.className = 'lookupIcon';" onmouseover="this.className = 'lookupIconOn';this.className = 'lookupIconOn';"
+	                               style="margin-left: 5px;"/>
+	                           <a href="" id="th_link_clearattachments" class="clear_link">clear</a>
+	                       </span>
+	                       <input type="hidden" name="selectedIds" class="selectedIds" value=""/>
+	                   </apex:outputPanel>
+	               </apex:pageBlockSectionItem>
+	               <!-- THIS SECTION SHOULD ONLY BE VISIBLE IF NOTES & ATTACHMENTS ARE AVAILABLE ON THE PRIMARY OBJECT -->
+	                <apex:inputField id="th_check_dna" value="{!TH1__Document_Setting__c.TH1__Dynamic_notes_attachments_enabled__c}" rendered="{!ObjectSupportsStorage}" styleClass="dynamicAttachmentsEnabledCheck" />
+	                <apex:pageBlockSectionItem helpText="Name of attachment to search for. Supports a semi-colon separated list, and ?* wildcards." rendered="{!ObjectSupportsStorage}">
+	                    <apex:outputLabel value="Attachment Name(s)"/>
+	                    <apex:outputPanel id="attachment_name_panel">
+	                        <apex:actionFunction name="clearDynamicEmailAttachmentName" action="{!clearDynamicEmailAttachmentName}" reRender="attachment_name_panel" oncomplete="hideMask();"/>
+	                        <apex:actionFunction name="cancelDynamicEmailAttachmentName" action="{!cancelDynamicEmailAttachmentName}" reRender="th_select_attachmentname"/>
+	                        <div class="requiredInput">
+	                            <div class="attachmentNameBlockIdentifier requiredBlock" />
+		                        <apex:inputText id="th_txt_attachment_name_field" value="{!TH1__Document_Setting__c.TH1__Dynamic_attachment_name_field__c}" rendered="{!TH1__Document_Setting__c.TH1__Dynamic_attachment_name_field__c != ''}" styleclass="th-attach-dynamic-email th-textbox-wide" disabled="true" />
+		                        <apex:inputText id="th_txt_attachment_name" value="{!TH1__Document_Setting__c.TH1__Dynamic_attachment_name__c}" maxLength="245" rendered="{!TH1__Document_Setting__c.TH1__Dynamic_attachment_name_field__c == ''}" styleclass="th-attach-static-email th-textbox-wide"/>
+		                        <c:COMMON_DynamicFieldPopup popId="dna_name_pop" updateActionMethod="changeFields" clearActionMethod="clearDynamicEmailAttachmentName" cancelActionMethod="cancel_cancelDynamicEmailAttachmentName"/>
+		                        <div id="dna_name_pop" class="pop" style="display: none;">
+		                            <apex:selectList id="th_select_attachmentname" value="{!TH1__Document_Setting__c.TH1__Dynamic_attachment_name_field__c}" size="1" styleclass="th-textbox">
+		                                <apex:selectOptions value="{!textFieldList}"/>
+		                            </apex:selectList>
+		                        </div>
+	                        </div>
+	                    </apex:outputPanel>
+	                </apex:pageBlockSectionItem>
+	                <apex:selectRadio id="th_radio_nodocs" value="{!TH1__Document_Setting__c.TH1__No_docs_action__c}" styleClass="th_radio_action" rendered="{!ObjectSupportsStorage}">
+	            		<apex:selectOptions value="{!noDocsOptionList}"/>
+	            	</apex:selectRadio>
+	            	<apex:selectRadio id="th_radio_manydocs" value="{!TH1__Document_Setting__c.TH1__Multiple_docs_action__c}" styleClass="th_radio_action" rendered="{!ObjectSupportsStorage}">
+	            		<apex:selectOptions value="{!multipleDocsOptionList}"/>
+	            	</apex:selectRadio>
+	            	<!-- END SECTION -->
+	            </apex:pageBlockSection>
+	            <!--  Chatter section -->
+	            <apex:pageBlockSection title="Chatter" columns="1" collapsible="false" id="chatter_section" rendered="{!OrgIsChatterEnabled}">
+	                <apex:inputField id="th_check_posttochatter" value="{!TH1__Document_Setting__c.TH1__Chatter_enabled__c}" styleClass="chatterEnableCheckbox"/>
+	                <apex:selectList id="th_select_chatterfeed" value="{!TH1__Document_Setting__c.TH1__Chatter_feed__c}" size="1" styleclass="chatterFeedDropdown th-textbox-wide chatterRequiredIndicator chatterDisable">
+	                    <apex:selectOptions value="{!chatterFeedOptionList}"/>
+	                </apex:selectList>
+	                <apex:selectList id="th_select_chatterposttype" value="{!TH1__Document_Setting__c.TH1__Chatter_post_type__c}" size="1" styleclass="chatterPostTypeDropdown th-textbox-wide chatterRequiredIndicator chatterDisable">
+	                    <apex:selectOptions value="{!chatterPostOptionList}"/>
+	                </apex:selectList>
+	                <apex:selectList id="th_select_chattergroup" value="{!TH1__Document_Setting__c.TH1__Chatter_group_id__c}" size="1" styleclass="th-textbox-wide chatterGroupRequiredIndicator chatterDisable">
+	                    <apex:selectOptions value="{!chatterGroups}"/>
+	                </apex:selectList>
+	                <apex:pageBlockSectionItem >
+	                <apex:outputLabel value="Chatter Text" for="chatterText"/>
+	                <apex:outputPanel id="chatterText">
+	                    <apex:actionFunction name="clearChatterText" action="{!clearChatterText}" reRender="chatterText" oncomplete="hideMask();"/>
+	                    <apex:actionFunction name="cancelChatterText" action="{!cancelChatterText}" reRender="th_select_chattertext"/>
+	                    <div class="requiredInput">
+	                        <div class="chatterBlockIdentifier requiredBlock" />
+	                        <apex:inputText id="th_txt_chattertext" value="{!TH1__Document_Setting__c.TH1__Chatter_text__c}" rendered="{!TH1__Document_Setting__c.TH1__Chatter_text_field__c == ''}" maxlength="{!MaxFilenameLength}" styleclass="th-textbox-wide chatterDisable"/>
+	                        <apex:inputText id="th_txt_chattertext_field" value="{!TH1__Document_Setting__c.TH1__Chatter_text_field__c}" rendered="{!TH1__Document_Setting__c.TH1__Chatter_text_field__c != ''}" styleclass="th-textbox-wide chatterDisableField" disabled="true"/>
+	                        <c:COMMON_DynamicFieldPopup popId="chatter_text_pop" updateActionMethod="changeFields" clearActionMethod="clearChatterText" cancelActionMethod="cancel_cancelChatterText"/>
+	                        <div id="chatter_text_pop" class="pop" style="display: none;">
+	                            <apex:selectList id="th_select_chattertext" value="{!TH1__Document_Setting__c.TH1__Chatter_text_field__c}" size="1" styleclass="th-textbox">
+	                            <apex:selectOptions value="{!textFieldList}"/>
+	                        </apex:selectList>
+	                        </div>
+	                    </div>
+	                </apex:outputPanel>
+	                </apex:pageBlockSectionItem>
+	                <apex:pageBlockSectionItem >
+	                    <apex:outputLabel value="Chatter Filename" for="chatterStorageName"/>
+	                    <apex:outputPanel id="chatterStorageName">
+	                        <apex:actionFunction name="clearChatterStorage" action="{!clearChatterStorage}" reRender="chatterStorageName" oncomplete="hideMask();"/>
+	                        <apex:actionFunction name="cancelChatterStorage" action="{!cancelChatterStorage}" reRender="th_select_chatterstorage"/>
+	                        <div class="requiredInput">
+	                            <div class="chatterFileNameBlockIdentifier requiredBlock" />
+	                            <apex:inputText id="th_txt_chatterfilename" value="{!TH1__Document_Setting__c.TH1__Chatter_file_name__c}" rendered="{!TH1__Document_Setting__c.TH1__Chatter_file_name_field__c == ''}" maxlength="25" styleclass="th-textbox-wide chatterDisable chatterFileName"/>
+	                            <apex:inputText id="th_txt_chatterfilename_field" value="{!TH1__Document_Setting__c.TH1__Chatter_file_name_field__c}" rendered="{!TH1__Document_Setting__c.TH1__Chatter_file_name_field__c != ''}" styleclass="th-textbox-wide chatterDisableField" disabled="true"/>
+	                            <c:COMMON_DynamicFieldPopup popId="chatter_storage_pop" updateActionMethod="changeFields" clearActionMethod="clearChatterStorage" cancelActionMethod="cancel_cancelChatterStorage"/>
+	                            <div id="chatter_storage_pop" class="pop" style="display: none;">
+	                                <apex:selectList id="th_select_chatterstorage" value="{!TH1__Document_Setting__c.TH1__Chatter_file_name_field__c}" size="1" styleclass="th-textbox">
+	                                <apex:selectOptions value="{!textFieldList}"/>
+	                            </apex:selectList>
+	                            </div>
+	                        </div>
+	                    </apex:outputPanel>
+	                </apex:pageBlockSectionItem>
+	            </apex:pageBlockSection>
+	            <!-- E-signature Integration -->
+	            <apex:pageBlockSection title="eSignature Integration" columns="1" collapsible="false" rendered="{!AND(NOT(ESignatureFunctionalityIsLicensed), NOT(ChannelSupportsEmail))}">
+	                <apex:pageMessage summary="{!ESignatureFeatureMessage}" severity="info" strength="3" escape="false" />
+	            </apex:pageBlockSection>
+	            <!-- Docusign section -->
+	            <apex:pageBlockSection title="DocuSign" columns="2" collapsible="false" rendered="{!AND(ESignatureFunctionalityIsLicensed, AND(appSettings.TH1__Docusign_Enabled__c, NOT(ChannelSupportsEmail)))}">
+	                <apex:inputField id="th_check_docusignenabled" value="{!TH1__Document_Setting__c.TH1__Docusign_enabled__c}" styleClass="docuSignEnabledCheckbox" />
+	                <apex:inputField id="th_check_docusignautosend" value="{!TH1__Document_Setting__c.TH1__DocuSign_Auto_Send__c}" styleClass="docuSignDisable"/>
+	                <apex:inputField id="th_check_docusignsendersig" value="{!TH1__Document_Setting__c.TH1__DocuSign_Sender_Signature_Order__c}" styleClass="docuSignDisable"/>
+	                <apex:selectList id="th_select_docusignenvelope" value="{!TH1__Document_Setting__c.TH1__Docusign_envelope_id_field__c}" multiselect="false" size="1" styleClass="docuSignDisable">
+	                    <apex:selectOptions value="{!textFieldListNoneOption}"/>
+	                </apex:selectList>
+	                <apex:selectList id="th_txt_docusignemailtofield" value="{!TH1__Document_Setting__c.TH1__Docusign_email_to_field__c}" multiselect="false" size="1" styleClass="docuSignRequiredIndicator docuSignDisable">
+	                    <apex:selectOptions value="{!docusignRecipientFieldList}"/>
+	                </apex:selectList>
+	                <apex:inputText id="th_txt_docusignemailsubject" value="{!TH1__Document_Setting__c.TH1__Docusign_email_subject__c}" styleclass="th-textbox docuSignRequiredIndicator docuSignDisable" maxlength="100"/>
+	                <apex:inputField id="th_txt_docusignemailbody" value="{!TH1__Document_Setting__c.TH1__Docusign_Email_Body__c}" styleclass="th-textbox docusignbody docuSignRequiredIndicator docuSignDisable" />
+	            </apex:pageBlockSection>
+	             <!-- Docusign section -->
+	            <apex:pageBlockSection title="DocuSign" columns="2" collapsible="false" rendered="{!AND(TH1__Document_Setting__c.TH1__Docusign_enabled__c && NOT(appSettings.TH1__Docusign_Enabled__c))}">
+	                <apex:inputField id="th_check_docusignenabled" value="{!TH1__Document_Setting__c.TH1__Docusign_enabled__c}" styleClass="docuSignEnabledCheckbox" />
+	            </apex:pageBlockSection>
+	            <!-- EchoSign section -->
+	            <apex:pageBlockSection title="EchoSign" columns="2" collapsible="false" rendered="{!ShowEchosign}">
+	                <apex:inputField id="th_check_echosignenabled" value="{!TH1__Document_Setting__c.TH1__Echosign_Enabled__c}" styleClass="echoSignEnabledCheckbox"/>
+	                <apex:selectList id="th_select_echosigntemplate" value="{!TH1__Document_Setting__c.TH1__Echosign_template_id__c}" size="1" styleClass="echoSignRequiredIndicator echoSignDisable">
+	                    <apex:selectOptions value="{!echoSignAgreementTemplates}"/>
+	                </apex:selectList>
+	            </apex:pageBlockSection>
+	            <!-- Pre-generation validation section  -->
+	            <apex:pageBlockSection title="Pre-Generation Validation" columns="1" collapsible="false">
+	                <apex:pageBlockSectionItem >
+	                    <apex:outputLabel value="{!$ObjectType.TH1__Document_Setting__c.Fields.TH1__Pregenerate_validation_field__c.Label}"/>
+	                    <apex:selectList id="th_select_pregen_validate_field" value="{!TH1__Document_Setting__c.TH1__Pregenerate_validation_field__c}" size="1" styleclass="pregenDropdown th-textbox">
+	                        <apex:selectOptions value="{!textFieldListNoneOption}"/>
+	                    </apex:selectList>
+	                </apex:pageBlockSectionItem>
+	            </apex:pageBlockSection>
+	            <!-- Post-Generation Redirection -->
+	            <apex:pageBlockSection title="Post-Generation" columns="1" collapsible="false" id="post_generation_section">
+	            	<apex:pageBlockSectionItem >
+		                 <apex:outputLabel value="{!$ObjectType.TH1__Document_Setting__c.Fields.TH1__Postgenerate_Redirection_Url__c.Label}"/>
+		                 <apex:outputPanel id="redirectionUrlPanel">
+							<apex:actionFunction name="clearRedirectionUrl" action="{!clearRedirectionUrl}" reRender="redirectionUrlPanel" oncomplete="hideMask();"/>
+		                    <apex:actionFunction name="cancelRedirectionUrl" action="{!cancelRedirectionUrl}" reRender="th_select_redirectionurl"/>
+		                	<apex:inputText id="th_txt_postgen_redirect_url" value="{!TH1__Document_Setting__c.TH1__Postgenerate_Redirection_Url__c}" rendered="{!TH1__Document_Setting__c.TH1__Postgenerate_Redirection_Url_Field__c == ''}" styleclass="th-textbox" maxlength="255"/>
+		                	<apex:inputText id="th_txt_postgen_redirect_url_field" value="{!TH1__Document_Setting__c.TH1__Postgenerate_Redirection_Url_Field__c}" rendered="{!TH1__Document_Setting__c.TH1__Postgenerate_Redirection_Url_Field__c != ''}" styleclass="th-textbox redirectionUrlDisableField" disabled="true"/>
+		                	<c:COMMON_DynamicFieldPopup popId="redirection_url_text_pop" updateActionMethod="changeFields" clearActionMethod="clearRedirectionUrl" cancelActionMethod="cancel_cancelRedirectionUrl"/>
+		                        <div id="redirection_url_text_pop" class="pop" style="display: none;">
+		                            <apex:selectList id="th_select_redirectionurl" value="{!TH1__Document_Setting__c.TH1__Postgenerate_Redirection_Url_Field__c}" size="1" styleclass="th-textbox">
+		                            	<apex:selectOptions value="{!textFieldList}"/>
+		                        	</apex:selectList>
+		                        </div>
+	                    </apex:outputPanel>
+	                </apex:pageBlockSectionItem>
+	            </apex:pageBlockSection>
+            </apex:outputPanel>
+        </apex:pageBlock>
+     </apex:form>
+</apex:outputPanel>
+<apex:outputPanel id="script_panel">
+        <script>
+            var previousTemplateName;
+
+            $(document).ready(function() {
+
+                //Default required fields
+                FormValidationUtil.addDefaultRequiredIndicator('.requiredIndicator');
+
+                //Draft fields
+                toggleDraft();
+
+                //Storage fields
+                FormValidationUtil.addToggleRequiredIndicator('.storageFileNameRequiredIndicator', 'storageFileNameBlockIdentifier');
+                toggleStorage();
+
+                //Email fields
+                toggleEmail();
+                FormValidationUtil.addToggleRequiredIndicator('.attachmentNameRequiredIndicator', 'attachmentNameBlockIdentifier');
+                toggleDynamicEmailAttachments();
+
+                //Chatter fields
+                FormValidationUtil.addToggleRequiredIndicator('.chatterRequiredIndicator', 'chatterBlockIdentifier');
+                FormValidationUtil.addToggleRequiredIndicator('.chatterGroupRequiredIndicator', 'chatterGroupBlockIdentifier');
+                toggleChatter();
+
+                //Echosign required fields
+                FormValidationUtil.addToggleRequiredIndicator('.echoSignRequiredIndicator', 'echoSignBlockIdentifier');
+                toggleEchoSign();
+
+                //Docusign required fields
+                FormValidationUtil.addToggleRequiredIndicator('.docuSignRequiredIndicator', 'docuSignBlockIdentifier');
+                toggleDocuSign();
+
+                //Filter fields
+                toggleFilter();
+
+                // Draft on click
+                $('.draftEnableCheckbox').change(function() {
+                    setDraftName();
+                    toggleDraft();
+                });
+                //Storage on change
+                $('.storageDropdown').change(function() {
+                    toggleStorage();
+                    setStorageFilename();
+                });
+                // Email on change
+                $('.emailEnabledCheck').change(function() {
+                    toggleEmail();
+                });
+                $('.dynamicAttachmentsEnabledCheck').change(function() {
+                   toggleDynamicEmailAttachments();
+                });
+                // Chatter on click
+                $('.chatterEnableCheckbox').change(function() {
+                    toggleChatter();
+                });
+                // Echosign on click
+                $('.echoSignEnabledCheckbox').change(function() {
+                    toggleEchoSign();
+                });
+                // Docusign on click
+                $('.docuSignEnabledCheckbox').change(function() {
+                    toggleDocuSign();
+                });
+                // Chatter feed options dropdown
+                $('.chatterFeedDropdown').change(function() {
+                    toggleChatter();
+                });
+                // Chatter post type options dropdown
+                $('.chatterPostTypeDropdown').change(function() {
+                    toggleChatter();
+                });
+                //Filter on change
+                $('.filterDropdown').change(function() {
+                    toggleFilter();
+                });
+                //Template Change
+                $('.templateDropdown').focus(function() {
+                    previousTemplateName = getSelectedTemplateName();
+                });
+            });
+
+            function toggleDraft(){
+                var draftIsEnabled = $('.draftEnableCheckbox').is(':checked');
+                FormValidationUtil.toggleDisable('.draftRetainCheckbox', draftIsEnabled);
+                FormValidationUtil.toggleDisable('.draftName', draftIsEnabled);
+                FormValidationUtil.toggleDisable('.generateDraftCheckbox', draftIsEnabled);
+                FormValidationUtil.toggleDisable('.collaborateDraftCheckbox', draftIsEnabled);
+                if(draftIsEnabled){
+                    $("#draft_pop_dynamic_button").show();
+                }else{
+                    $("#draft_pop_dynamic_button").hide();
+                }
+            }
+
+            function toggleStorage(){
+                var attachmentIsSelected = false;
+                if($('.storageDropdown').val() == 'Attachment'){
+                    attachmentIsSelected = true;
+                }
+
+                FormValidationUtil.toggleRequiredIndicator('.storageFileNameBlockIdentifier', attachmentIsSelected);
+                FormValidationUtil.toggleDisable('.storageFilename', attachmentIsSelected);
+                if(attachmentIsSelected){
+                    $("#storage_pop_dynamic_button").show();
+                }else{
+                    $("#storage_pop_dynamic_button").hide();
+                }
+            }
+
+            function toggleChatter(){
+                var chatterEnabled = $('.chatterEnableCheckbox').is(':checked');
+                var groupFeedIsSelected = false;
+                var attachFileIsSelected = false;
+                if(chatterEnabled && $('.chatterFeedDropdown').val() == 'Group feed'){
+                    groupFeedIsSelected = true;
+                }
+                if(chatterEnabled && $('.chatterPostTypeDropdown').val() == 'Attach file'){
+                    attachFileIsSelected = true;
+                }
+                FormValidationUtil.toggleDisable('.chatterDisable', chatterEnabled);
+                FormValidationUtil.toggleDisable('.chatterFileName', attachFileIsSelected);
+                FormValidationUtil.toggleRequiredIndicator('.chatterBlockIdentifier', chatterEnabled);
+                FormValidationUtil.toggleRequiredIndicator('.chatterGroupBlockIdentifier', groupFeedIsSelected);
+                FormValidationUtil.toggleRequiredIndicator('.chatterFileNameBlockIdentifier', attachFileIsSelected);
+                if(chatterEnabled){
+                    $("#chatter_text_pop_dynamic_button").show();
+                    if(attachFileIsSelected){
+                        $("#chatter_storage_pop_dynamic_button").show();
+                    }else{
+                        $("#chatter_storage_pop_dynamic_button").hide();
+                    }
+                }else{
+                    $("#chatter_text_pop_dynamic_button").hide();
+                    $("#chatter_storage_pop_dynamic_button").hide();
+                }
+            }
+
+            function toggleEchoSign(){
+                var echoSignEnabled = $('.echoSignEnabledCheckbox').is(':checked');
+                FormValidationUtil.toggleDisable('.echoSignDisable', echoSignEnabled);
+                FormValidationUtil.toggleRequiredIndicator('.echoSignBlockIdentifier', echoSignEnabled);
+            }
+
+            function toggleDocuSign(){
+                var docuSignEnabled = $('.docuSignEnabledCheckbox').is(':checked');
+                FormValidationUtil.toggleDisable('.docuSignDisable', docuSignEnabled);
+                FormValidationUtil.toggleRequiredIndicator('.docuSignBlockIdentifier', docuSignEnabled);
+            }
+
+            //Changes where email is enabled / disabled
+            function toggleEmail(){
+                var emailEnabled = $('.emailEnabledCheck').is(':checked');
+                if(emailEnabled == 1){
+                    $("#email_to_pop_dynamic_button").show();
+                    $("#email_cc_pop_dynamic_button").show();
+                    $("#email_bcc_pop_dynamic_button").show();
+                    $("#email_subject_pop_dynamic_button").show();
+                    $("#open_attachment_popup").show();
+                } else {
+                    $("#email_to_pop_dynamic_button").hide();
+                    $("#email_cc_pop_dynamic_button").hide();
+                    $("#email_bcc_pop_dynamic_button").hide();
+                    $("#email_subject_pop_dynamic_button").hide();
+                    $("#open_attachment_popup").hide();
+                }
+                FormValidationUtil.toggleDisable('.dynamicAttachmentsEnabledCheck', emailEnabled);
+                FormValidationUtil.toggleDisable('.th-static-email', emailEnabled);
+                FormValidationUtil.toggleDisable('.th-email-fromaddress', emailEnabled);
+                toggleDynamicEmailAttachments();
+            }
+
+            function toggleDynamicEmailAttachments() {
+            	var emailEnabled = $('.emailEnabledCheck').is(':checked');
+            	var dynamicAttEnabled = $('.dynamicAttachmentsEnabledCheck').is(':checked');
+            	if (emailEnabled == 1 && dynamicAttEnabled == 1) {
+            		$("#dna_name_pop_dynamic_button").show();
+            	} else {
+            		$("#dna_name_pop_dynamic_button").hide();
+            	}
+            	FormValidationUtil.toggleRequiredIndicator('.attachmentNameBlockIdentifier', dynamicAttEnabled && emailEnabled);
+            	FormValidationUtil.toggleDisable('.th-attach-static-email', dynamicAttEnabled && emailEnabled);
+            	FormValidationUtil.toggleDisable('.th_radio_action', dynamicAttEnabled && emailEnabled);
+            	toggleRadio(dynamicAttEnabled && emailEnabled);
+            }
+
+            function toggleRadio(enabled) {
+            	if (enabled) {
+            		$('.th_radio_action').find('input').removeAttr("disabled");
+            	} else {
+            		$('.th_radio_action').find('input').attr("disabled","disabled");
+            	}
+
+            }
+
+            function toggleFilter(){
+                var filterIsSelected = false;
+                if($('.filterDropdown').val() != ''){
+                    filterIsSelected = true;
+                } else {
+                    $('.filterFieldValue').val('');
+                }
+
+                FormValidationUtil.toggleDisable('.filterFieldValue', filterIsSelected);
+            }
+            
+            function cancel_cancelRedirectionUrl(){
+            	cancelRedirectionUrl();
+            }
+
+            function cancel_cancelStorage(){
+                cancelStorage();
+            }
+
+            function cancel_cancelEmailTo(){
+                cancelEmailTo();
+            }
+
+            function cancel_cancelEmailCc(){
+                cancelEmailCc();
+            }
+
+            function cancel_cancelEmailBcc(){
+                cancelEmailBcc();
+            }
+
+            function cancel_cancelEmailSubject(){
+                cancelEmailSubject();
+            }
+
+            function cancel_cancelDynamicEmailAttachmentName(){
+                cancelDynamicEmailAttachmentName();
+            }
+
+            function cancel_cancelChatterText(){
+                cancelChatterText();
+            }
+
+            function cancel_cancelChatterStorage(){
+                cancelChatterStorage();
+            }
+
+            function onTemplateChange() {
+                showMask();
+            }
+
+            /*
+            * Updates the storage filename to be that of the template if it has not been set by the user
+            */
+            function onTemplateChangeComplete() {
+                setStorageFilename();
+                setDraftName();
+                hideMask();
+            }
+
+            /*
+            * Gets the selected Template name
+            */
+            function getSelectedTemplateName() {
+                return $('.templateDropdown option:selected').text();
+            }
+
+            /*
+            * Sets the storage name to be that of the template name if it has not been set by the user
+            */
+            function setStorageFilename() {
+                var storageFilename = $('.storageFilename').val();
+                var newTemplateName = getSelectedTemplateName();
+
+                if($('.storageDropdown').val() === 'Attachment' && newTemplateName !== '--None--' && (!storageFilename || storageFilename === previousTemplateName)) {
+                    $('.storageFilename').val(newTemplateName);
+                }
+            }
+
+            /*
+            * Sets the draft name to be that of the template name if it has not been set by the user
+            */
+            function setDraftName() {
+                var draftName = $('.draftName').val();
+                var newTemplateName = getSelectedTemplateName();
+
+                if($('.draftEnableCheckbox').prop('checked') && newTemplateName !== '--None--' && (!draftName || draftName === previousTemplateName)) {
+                    $('.draftName').val(newTemplateName);
+                }
+            }
+        </script>
+</apex:outputPanel>
+    </apex:outputPanel>
+    <c:COMMON_HelpUtil />
+    <div class="wrap-bootstrap"></div>
+</apex:page>

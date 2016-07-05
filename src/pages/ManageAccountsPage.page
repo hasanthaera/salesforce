@@ -1,0 +1,35 @@
+<apex:page showHeader="true" Title="Manage Accounts" standardController="Account" tabStyle="Account" extensions="ManageAccountsController" >
+<apex:sectionHeader title="Manage Accounts" />
+ 
+    <apex:form >
+     <apex:pageBlock title="Accounts List" id="accts">
+      <apex:inputText value="{!searchCriteria}" />
+      <apex:commandButton action="{!getAccounts}" value="Search"  rerender="accts" style="width:100px"/>
+      <apex:commandButton action="{!addNew}"      value="New"     rerender="accts" style="width:100px"/>
+ 
+     <apex:pageMessages id="headerMessages"/> 
+        <apex:pageBlockTable value="{!accounts}" var="item"  rendered="{!bolNoData }" >
+            <apex:column >
+             <apex:commandLink value="{!item.name}" action="{!fillDetails}" rerender="accts" >{!item.name}
+                 <apex:param value="{!item.id}" name="accId"/>
+             </apex:commandLink>
+             </apex:column>
+            <apex:column value="{!item.phone}"/>
+            <apex:column value="{!item.ShippingCity}"/>
+            <apex:column value="{!item.ShippingCountry}"/>
+        </apex:pageBlockTable> 
+         <apex:pageBlockSection columns="2" title="Accounts Details" rendered="{!bolshowDetail}">
+            <apex:inputText value="{!Account.name}" required="false" id="idName" disabled="{!bolDisableName}"/>  
+            
+            <apex:inputField value="{!Account.phone}"/>            
+            <apex:inputField value="{!Account.ShippingCity}"/>
+            <apex:inputField value="{!Account.ShippingCountry }"/>
+                <apex:pageBlockSection columns="20">
+                      <apex:commandButton action="{!saveAccount}" value="Save"  rerender="accts" style="width:100px"/>
+                      <apex:commandButton action="{!cancelAccount}" value="Cancel"  rerender="accts" style="width:100px" />             
+                      <apex:commandButton action="{!deleteAccount}" value="Delete"  rerender="accts" style="width:100px" />
+                 </apex:pageBlockSection>
+         </apex:pageBlockSection>
+    </apex:pageBlock> 
+    </apex:form> 
+</apex:page>

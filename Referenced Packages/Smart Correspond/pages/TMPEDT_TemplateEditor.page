@@ -1,0 +1,29 @@
+<apex:page controller="TH1.APPSET_CO_Settings" action="{!onload}" sidebar="false" tabStyle="TH_Templates__tab">
+	<c:COMMON_HelpUtil />
+	<apex:pageMessage summary="{!TemplateDesignerFeatureMessage}" severity="info" strength="3" rendered="{!NOT(TemplateDesignerIsLicensed)}" escape="false" />
+	<apex:outputPanel rendered="{!TemplateDesignerIsLicensed}">
+		<script type='text/javascript' src='{!URLFOR($Resource.ThunderheadResources, "scripts/ResizeUtil.js")}'></script>
+		<script type="text/javascript">
+			var templateResizeUtil;
+			var existingOnLoad = window.onload;
+			window.onload = function() {
+				templateResizeUtil = new Thunderhead.SF.ResizeUtility(
+					'templateEditor',
+					Thunderhead.SF.ResizeUtility.prototype.DEFAULT_FOOTER_HEIGHT
+				); 
+				
+				//Resize PDF Viewer
+				templateResizeUtil.resizeElement();
+				window.onresize = function() {
+					templateResizeUtil.resizeElement();
+				}
+				if (existingOnLoad) {
+					existingOnLoad();
+				}
+			};
+	    </script>
+		<div id="templateEditor" style="padding: 0;">
+	    	<apex:iframe src="{!TemplateEditorUrl}&sessionid={!URLENCODE($Api.Session_ID)}&url={!URLENCODE(PartnerServerUrl)}&userid={!URLENCODE($User.Id)}" width="100%" height="100%" frameborder="0" />
+		</div>
+	</apex:outputPanel>
+</apex:page>

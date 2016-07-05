@@ -1,0 +1,7 @@
+<apex:page controller="DataSync.SYNC_APP_Start_Controller" sidebar="false" showHeader="false" action="{!herokuCallForOAuthLogin}">
+
+	<apex:outputPanel id="messagePanel">
+   		<apex:pageMessages />
+   	</apex:outputPanel> 
+
+</apex:page>

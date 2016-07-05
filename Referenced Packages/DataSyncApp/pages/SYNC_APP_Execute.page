@@ -1,0 +1,139 @@
+<!-- 
+ *************************************************************
+ * Description      : VF Page for SYNC App Execute
+ * @author          : Nadika Dhanusha Mahatantila
+ * @since           : 03 July 2014
+ ************************************************************* 
+ -->
+
+<apex:page id="syncAppExecute" controller="DataSync.SYNC_APP_SelectExecuteController" tabStyle="ABSI_Data_Refresh__tab">
+
+	<!-- Header -->
+	
+    <apex:includeScript value="{!URLFOR($Resource.DataSync__Sync_App_Resources, 'js/jquery-1.11.1.min.js')}"/>
+    <apex:includeScript value="{!URLFOR($Resource.DataSync__Sync_App_Resources, 'js/jquery-ui.js')}"/>
+    <apex:includeScript value="{!URLFOR($Resource.DataSync__Sync_App_Resources, 'js/jquery.browser.min.js')}"/>
+	<apex:stylesheet value="{!URLFOR($Resource.DataSync__Sync_App_Resources, 'css/jquery-ui.css')}"/>
+
+	
+	<style type="text/css">
+        .custPopup{
+            background-color: white;
+            border-width: 2px;
+            border-style: solid;
+            z-index: 9999;
+            left: 40%;
+            padding:10px;
+            position: absolute;
+            /* These are the 3 css properties you will need to change so the popup 
+            displays in the center of the screen. First set the width. Then set 
+            margin-left to negative half of what the width is. You can add 
+            the height property for a fixed size pop up if you want.*/
+            width: 700px;
+            margin-left: -250px;
+            top:100px;
+        }
+        
+        .popupBackground{
+            background-color:black;
+            opacity: 0.20;
+            filter: alpha(opacity = 20);
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+            z-index: 9998;
+        }
+        
+	</style>
+	
+	<apex:sectionHeader title="Execute" />
+    
+    <body>  
+        <apex:form id="idForm">
+        	<!-- Error Page Block Section -->	
+			<apex:outputPanel id="messagePanel"> 
+		    	<apex:pageMessages />
+		    </apex:outputPanel>
+			
+			<!-- UI Components Page Block Section -->					
+			<apex:pageBlock mode="edit">
+				<!-- Buttons -->
+				<apex:pageBlockButtons rendered="{!selectedProcess!=null}" location="bottom">
+					<apex:commandButton action="{!cancel}" value="Back" />					                       
+				</apex:pageBlockButtons>
+				<apex:pageBlockButtons rendered="{!selectedProcess==null}" location="bottom">
+					<apex:commandButton action="{!backToHistory}" value="Back to jobs" />					                       
+				</apex:pageBlockButtons>
+				
+				<!-- Execute Details -->
+                <apex:pageBlockSection columns="1">
+                	<apex:outputPanel >
+                		Follow the progress of the refresh process action.
+                	</apex:outputPanel>
+                	
+                	<apex:pageBlockSectionItem />
+                	
+                	<apex:outputPanel rendered="{!selectedProcess!=null}">
+	                	<apex:pageBlockSectionItem >
+	                		<apex:outputLabel value="<b>Process</b>:" escape="false" />
+	                		<apex:outputLabel value="{!selectedProcess}" escape="false" />
+	                	</apex:pageBlockSectionItem>	
+	                	
+	                	<apex:pageBlockSectionItem >
+	                		<apex:outputLabel value="<b>Source</b>:" escape="false" />
+	                		<apex:outputLabel value="{!sourceOrg}" escape="false" />
+	                	</apex:pageBlockSectionItem>	
+	                	
+	                	<apex:pageBlockSectionItem >
+	                		<apex:outputLabel value="<b>Destination</b>:" escape="false" />
+	                		<apex:outputLabel value="{!destOrg}" escape="false" />
+	                	</apex:pageBlockSectionItem>	
+                	</apex:outputPanel>
+                	
+                	<apex:pageBlockSectionItem />
+                	
+                	<apex:pageBlockSectionItem >
+						<apex:pageBlockTable value="{!resultsList}" var="result" width="100%" border="0" cellpadding="0" cellspacing="0"> 
+							<apex:column headerValue="Object" value="{!result.objName}" />
+							<apex:column style="text-align:right;" headerValue="Updated" value="{!result.updates}" />
+							<apex:column style="text-align:right;" headerValue="Failed" value="{!result.fails}" />
+	            			
+	            			<apex:column >
+			                	<apex:facet name="header">Errors</apex:facet>
+			                	<apex:outputLabel value="{!result.errorMessages}" escape="false" />
+						    	<apex:commandLink rendered="{!!result.isShort}" action="{!showExPopUp}" value="[more]" reRender="errPopup" >
+									<apex:param name="firstParam" value="{!result.errorMessagesLong}" assignTo="{!tmpErrMsg}" />
+								</apex:commandLink>
+				            </apex:column>		
+				            					
+						</apex:pageBlockTable>
+					</apex:pageBlockSectionItem>
+					
+					<apex:pageBlockSectionItem />
+					
+				</apex:pageBlockSection>
+			</apex:pageBlock>	
+        </apex:form>
+        
+        <!-- Criteria Generation POP UP -->
+		<apex:outputPanel id="errPopup">
+		
+	    	<apex:outputPanel styleClass="popupBackground" layout="block" rendered="{!displayExPopUp}"/>
+	        <apex:outputPanel styleClass="custPopup" layout="block" rendered="{!displayExPopUp}" style="overflow:scroll; height:500px;" >
+	        	<apex:form >
+			        <apex:pageBlock >
+			        		{!tmpErrMsg}
+			        	
+				        	<apex:pageBlockButtons >
+				        		<apex:commandButton value="Close" action="{!closeExPopUp}" rerender="errPopup"></apex:commandButton>
+				        	</apex:pageBlockButtons>
+			        </apex:pageBlock>
+		        </apex:form>
+	        </apex:outputPanel>
+	        
+	    </apex:outputPanel>
+	</body>
+	       
+</apex:page>

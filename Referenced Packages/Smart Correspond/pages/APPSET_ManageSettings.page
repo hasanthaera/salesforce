@@ -1,0 +1,232 @@
+<apex:page controller="TH1.APPSET_CO_ManageSettings" sidebar="false" action="{!onload}" tabstyle="Application_Settings__tab">
+    <c:COMMON_JQueryLib />
+    <script type="text/javascript" src="{!URLFOR($Resource.ThunderheadResources, 'scripts/formValidationUtil.js')}"></script>
+    <script type="text/javascript">
+        //On ready
+        $(function(){
+      		//Add default required field identifier
+           	FormValidationUtil.addDefaultRequiredIndicator('.requiredIndicator');
+           	//Add docusign required field identifier
+           	FormValidationUtil.addToggleRequiredIndicator('.docusignRequiredIndicator', 'docusignBlockIdentifier');
+           	FormValidationUtil.addToggleRequiredIndicator('.echosignRequiredIndicator', 'echosignBlockIdentifier');
+           	//Set disable flag on docusign textboxes
+           	FormValidationUtil.toggleDisable('.docusignRequiredIndicator', {!DocusignEnabled});
+           	FormValidationUtil.toggleRequiredIndicator('.docusignBlockIdentifier', {!DocusignEnabled});
+           	FormValidationUtil.toggleRequiredIndicator('.echosignBlockIdentifier', {!EchosignEnabled});
+           	FormValidationUtil.toggleDisable('.emailToCaseOptions', {!EmailToCaseEnabled});
+  		});
+
+       	var configure = function() {
+       	    showMask();
+	        var configureWindow = window.open('{!JSENCODE(ConfigureURL)}');
+	        var intervalId = setInterval(function() {
+	            if (configureWindow.closed) {
+	                clearInterval(intervalId);
+	                changeUser();
+	                hideMask();
+	            }
+	       	}, 2000);
+   		};
+
+    </script>
+    <style>
+        <!-- TODO: Refactor to common static resource -->
+        .Custom150Tab .tertiaryPalette, .individualPalette .Custom150Block .tertiaryPalette, .layoutEdit .individualPalette .Custom150Block .tertiaryPalette {
+            background-color: #e1e1e1;
+            border-color: #e1e1e1;
+        }
+        .Custom230Tab .tertiaryPalette, .individualPalette .Custom230Block .tertiaryPalette, .layoutEdit .individualPalette .Custom230Block .tertiaryPalette {
+            background-color: #e1e1e1;
+            border-color: #e1e1e1;
+        }
+        .apexp .bPageBlock.apexDefaultPageBlock .pbBody .pbSubheader {
+            color:  #333333;
+        }
+        .th-textbox-appsettings {
+            width : 300px;
+        }
+    </style>
+
+    <apex:form >
+    	<apex:actionFunction name="changeUser" action="{!setIntegrationUser}" reRender="th_settings_form"/>
+
+        <apex:sectionHeader title="Application settings" subtitle="Edit Application settings" />
+        <!-- Replicate SF help for this page -->
+        <div class="bPageTitle" style="padding:0px;">
+            <div class="ptBody">
+                <c:COMMON_PageHelpLink helpUrlPath="index.htm#16552.htm" showText="true"/>
+            </div>
+        </div>
+        <c:COMMON_Mask />
+        <script type="text/javascript">
+            function exportProject(){
+                window.open('{!JSENCODE(ExportProjectUrl)}');
+            };
+            function importProject(){
+                window.open('{!JSENCODE(ImportProjectUrl)}');
+            }
+        </script>
+
+        <apex:outputPanel id="th_settings_form">
+
+        <apex:pageBlock title="Settings" mode="detail">
+            <apex:pageMessages rendered="{!IF(MessageType = 1, true, false)}" />
+            <apex:pageBlockButtons >
+                <apex:commandButton id="th_btn_save" action="{!save}" value="Save" />
+                <apex:commandButton id="th_btn_cancel" action="{!cancel}" value="Cancel" />
+                <apex:commandButton id="th_btn_advanced" action="{!switchMode}" value="{!Mode}" />
+            </apex:pageBlockButtons>
+            <apex:pageBlockSection title="General" columns="2" collapsible="false">
+                <apex:pageBlockSectionItem rendered="{!IsSimpleMode}">
+                    <apex:outputLabel value="Server" />
+                    <apex:inputText id="th_txt_server" value="{!ThInstance}" styleClass="th-textbox-appsettings requiredIndicator" disabled="{!NOT($ObjectType.TH1__Application_Custom_Settings__c.Updateable)}"/>
+                </apex:pageBlockSectionItem>
+                <apex:inputField id="th_txt_project_id" value="{!AppSettings.TH1__Project_Id__c}" styleClass="th-textbox-appsettings requiredIndicator" rendered="{!not(IsSimpleMode)}" />
+                <apex:inputField id="th_txt_folder_id" value="{!AppSettings.TH1__Folder_Id__c}" styleClass="th-textbox-appsettings requiredIndicator" rendered="{!not(IsSimpleMode)}" />
+                <apex:inputField id="th_txt_auth_url" value="{!AppSettings.TH1__Auth_URL__c}" styleClass="th-textbox-appsettings requiredIndicator" rendered="{!not(IsSimpleMode)}" />
+            </apex:pageBlockSection>
+            <apex:pageBlockSection title="Document Generation" columns="2" collapsible="false" rendered="{!AND(ShowAdditionalSettings, AppSettings.TH1__Feature_Template_Designer_Active__c)}">
+                <apex:inputField id="th_check_info_warn" value="{!AppSettings.TH1__Show_Information_Warning_Messages__c}" />
+            </apex:pageBlockSection>
+            <apex:pageBlockSection title="Data Models" columns="2" collapsible="false" rendered="{!ShowAdditionalSettings}">
+                <apex:inputField id="th_check_data_model_prepopulate" value="{!AppSettings.TH1__Data_model_prepopulate_fields__c}" />
+                <apex:inputField id="th_enforce_pl_validation" value="{!AppSettings.TH1__Data_model_enforce_picklist_validation__c}" />
+                <apex:inputField id="th_datetime_to_user_timezone" value="{!AppSettings.TH1__Data_model_datetime_to_user_timezone__c}" />
+            </apex:pageBlockSection>
+            <apex:pageBlockSection title="Dashboard" columns="2" collapsible="false" rendered="{!not(IsSimpleMode)}" >
+                <apex:inputField id="th_txt_dashboard_url" value="{!AppSettings.TH1__Dashboard_URL__c}" styleClass="th-textbox-appsettings requiredIndicator" />
+            </apex:pageBlockSection>
+            <apex:pageBlockSection title="Template Editor" columns="2" collapsible="false" rendered="{!not(IsSimpleMode)}" >
+                <apex:inputField id="th_txt_template_url" value="{!AppSettings.TH1__Template_Editor_URL__c}" styleClass="th-textbox-appsettings requiredIndicator" />
+            </apex:pageBlockSection>
+            <apex:pageBlockSection title="Draft Editor" columns="2" collapsible="false" rendered="{!not(IsSimpleMode)}" >
+                <apex:inputField id="th_txt_doc_editor_server_url" value="{!AppSettings.TH1__Draft_Editor_Server_URL__c}" styleClass="th-textbox-appsettings requiredIndicator" />
+                <apex:inputField id="th_txt_doc_editor_api_url" value="{!AppSettings.TH1__Draft_Editor_API_URL__c}" styleClass="th-textbox-appsettings requiredIndicator" />
+            </apex:pageBlockSection>
+            <apex:pageBlockSection title="API" columns="2" collapsible="false">
+                <apex:inputField id="th_txt_api_username" value="{!AppSettings.TH1__API_Username__c}" styleClass="th-textbox-appsettings requiredIndicator" rendered="{!not(IsSimpleMode)}" />
+                <apex:inputField id="th_txt_api_url" value="{!AppSettings.TH1__API_URL__c}" styleClass="th-textbox-appsettings requiredIndicator" rendered="{!not(IsSimpleMode)}" />
+                <apex:inputField id="th_txt_api_key" value="{!AppSettings.TH1__API_Access_Key__c}" styleClass="th-textbox-appsettings requiredIndicator" />
+                <apex:pageBlockSectionItem >
+                    <apex:outputLabel value="API Secret" />
+                    <apex:inputText id="th_txt_api_secret" value="{!APISecret}" styleClass="th-textbox-appsettings requiredIndicator" disabled="{!NOT($ObjectType.TH1__Application_Custom_Settings__c.Updateable)}"/>
+                </apex:pageBlockSectionItem>
+            </apex:pageBlockSection>
+            <apex:pageBlockSection title="SMTP Email Provider" collapsible="false" rendered="{!AND(ShowAdditionalSettings, AppSettings.TH1__Feature_Template_Designer_Active__c)}">
+                <apex:inputField id="th_check_smtp_active" value="{!AppSettings.TH1__SMTP_Active__c}" />
+                <apex:selectList id="th_select_smtp_host" value="{!AppSettings.TH1__SMTP_Host__c}" styleClass="requiredIndicator" size="1">
+                    <apex:selectOptions value="{!SMTPProviders}"/>
+                </apex:selectList>
+                <apex:inputField id="th_txt_smtp_username" value="{!AppSettings.TH1__SMTP_Username__c}" styleClass="th-textbox-appsettings" />
+                <apex:pageBlockSectionItem >
+                    <apex:outputLabel value="SMTP Password" />
+                    <apex:inputText id="th_txt_smtp_password" value="{!SMTPPassword}" styleClass="th-textbox-appsettings" />
+                </apex:pageBlockSectionItem>
+            </apex:pageBlockSection>
+            <apex:pageBlockSection title="DocuSign" columns="2" collapsible="false" rendered="{!AND(AppSettings.TH1__Feature_ESignature_Active__c, ShowAdditionalSettings, AppSettings.TH1__Feature_Template_Designer_Active__c)}">
+                <apex:inputField id="th_txt_docusign_enabled" value="{!AppSettings.TH1__Docusign_Enabled__c}" onclick="FormValidationUtil.toggleDisable('.docusignRequiredIndicator', this.checked);FormValidationUtil.toggleRequiredIndicator('.docusignBlockIdentifier', this.checked);"/>
+                <apex:inputField id="th_txt_docusign_url" value="{!AppSettings.TH1__Docusign_Webservice_Url__c}" styleClass="th-textbox-appsettings docusignRequiredIndicator" />
+                <apex:inputField id="th_txt_docusign_account_id" value="{!AppSettings.TH1__Docusign_Account_Id__c}" styleClass="th-textbox-appsettings docusignRequiredIndicator" />
+                <apex:inputField id="th_txt_docusign_username" value="{!AppSettings.TH1__Docusign_Username__c}"  styleClass="th-textbox-appsettings docusignRequiredIndicator " />
+                <apex:pageBlockSectionItem >
+                    <apex:outputLabel value="DocuSign Password" />
+                    <apex:inputText id="th_txt_docusign_password" value="{!DocusignPassword}" styleClass="th-textbox-appsettings docusignRequiredIndicator" />
+                </apex:pageBlockSectionItem>
+            </apex:pageBlockSection>
+            <apex:pageBlockSection title="EchoSign" columns="2" collapsible="false" rendered="{!AND(EchoSignAPIGenerationIsConfigured, AppSettings.TH1__Feature_ESignature_Active__c, ShowAdditionalSettings, AppSettings.TH1__Feature_Template_Designer_Active__c)}">
+                <apex:inputField id="th_txt_echosign_api_enabled" value="{!AppSettings.TH1__Echosign_API_Enabled__c}" onclick="FormValidationUtil.toggleDisable('.echosignRequiredIndicator', this.checked);FormValidationUtil.toggleRequiredIndicator('.echosignBlockIdentifier', this.checked);" />
+                <apex:inputField id="th_txt_echosign_api_handlerclass" value="{!AppSettings.TH1__Echosign_API_Handler_Class__c}" styleClass="th-textbox-appsettings echosignRequiredIndicator" />
+            </apex:pageBlockSection>
+            <apex:pageBlockSection title="Email-to-Case" columns="1" collapsible="false" rendered="{!AND(EmailToCaseEnabledInOrg, AppSettings.TH1__Feature_Template_Designer_Active__c)}">
+                <apex:inputField id="th_chk_email_to_case_enabled" value="{!AppSettings.TH1__Email_to_Case_Enabled__c}" onclick="FormValidationUtil.toggleDisable('.emailToCaseOptions', this.checked);"/>
+                <apex:inputField id="th_chk_etc_threadid_subject" value="{!AppSettings.TH1__Thread_Id_Email_Subject__c}" styleClass="emailToCaseOptions"/>
+                <apex:inputField id="th_chk_etc_threadid_body" value="{!AppSettings.TH1__Thread_Id_Email_Body__c}" styleClass="emailToCaseOptions"/>
+            </apex:pageBlockSection>
+			<apex:pageBlockSection title="Script Injected Panels" columns="2" collapsible="false" rendered="false">
+				<apex:inputField id="th_text_ofm_server_url" value="{!appSettings.TH1__OfM_server_URL__c}" styleClass="th-textbox-appsettings" />
+			</apex:pageBlockSection>
+			<apex:pageBlockSection title="Conversations Settings" columns="2" collapsible="false" rendered="{!AND(AppSettings.TH1__Feature_Connect_Active__c, ShowAdditionalSettings)}">
+				<apex:inputField id="th_text_ofm_site_key" value="{!appSettings.TH1__OFM_Site_Key__c}" styleClass="th-textbox-appsettings" />
+				<apex:inputField id="th_text_ofm_touchpoint_uri" value="{!appSettings.TH1__OFM_Touchpoint_URI__c}" styleClass="th-textbox-appsettings" />
+			</apex:pageBlockSection>
+			<apex:pageBlockSection columns="1" title="Interaction Rules" collapsible="false" rendered="{!AND(AppSettings.TH1__Feature_Connect_Active__c, ShowAdditionalSettings)}">
+		    	<apex:pageBlockSectionItem >
+					<apex:outputLabel value="Interaction Sync Interval"/>
+					<apex:selectList value="{!appSettings.TH1__Interaction_Sync_Interval__c}" size="1">
+						<apex:selectOptions value="{!interactionSyncIntervalOptions}"/>
+					</apex:selectList>
+				</apex:pageBlockSectionItem>
+			</apex:pageBlockSection>
+        </apex:pageBlock>
+        <apex:pageBlock title="Features">
+            <apex:pageMessage summary="{!FeaturesMessage}" severity="info" strength="2" rendered="{!ShowFeaturesMessage}" escape="false" />
+            <apex:pageMessages rendered="{!IF(MessageType = 2, true, false)}" />
+            <apex:pageBlockButtons location="top">
+                <apex:commandButton id="th_btn_synchronise_features" action="{!synchroniseFeatures}" value="Synchronize" />
+            </apex:pageBlockButtons>
+            <apex:pageBlockSection collapsible="false">
+                <apex:pageBlockSectionItem >
+                    <apex:outputLabel value="{!$ObjectType.TH1__Application_Custom_Settings__c.Fields.TH1__Feature_Template_Designer_Active__c.Label}"/>
+                    <apex:outputLabel id="th_check_template_designer_feature" value="{!IF(AppSettings.TH1__Feature_Template_Designer_Active__c, 'Licensed', 'Not Licensed')}" />
+                </apex:pageBlockSectionItem>
+                <apex:pageBlockSectionItem >
+                    <apex:outputLabel value="{!$ObjectType.TH1__Application_Custom_Settings__c.Fields.TH1__Feature_Drafts_Active__c.Label}"/>
+                    <apex:outputLabel id="th_check_draft_feature" value="{!IF(AppSettings.TH1__Feature_Drafts_Active__c, 'Licensed', 'Not Licensed')}" />
+                </apex:pageBlockSectionItem>
+                <apex:pageBlockSectionItem >
+                    <apex:outputLabel value="{!$ObjectType.TH1__Application_Custom_Settings__c.Fields.TH1__Feature_ESignature_Active__c.Label}"/>
+                    <apex:outputLabel id="th_check_esignature_feature" value="{!IF(AppSettings.TH1__Feature_ESignature_Active__c, 'Licensed', 'Not Licensed')}" />
+                </apex:pageBlockSectionItem>
+                <apex:pageBlockSectionItem >
+                    <apex:outputLabel value="{!$ObjectType.TH1__Application_Custom_Settings__c.Fields.TH1__Feature_Bulk_Generation_Active__c.Label}"/>
+                    <apex:outputLabel id="th_check_bulk_feature" value="{!IF(AppSettings.TH1__Feature_Bulk_Generation_Active__c, 'Licensed', 'Not Licensed')}" />
+                </apex:pageBlockSectionItem>
+                <apex:pageBlockSectionItem >
+                    <apex:outputLabel value="{!$ObjectType.TH1__Application_Custom_Settings__c.Fields.TH1__Feature_API_Generation_Active__c.Label}"/>
+                    <apex:outputLabel id="th_check_api_feature" value="{!IF(AppSettings.TH1__Feature_API_Generation_Active__c, 'Licensed', 'Not Licensed')}" />
+                </apex:pageBlockSectionItem>
+                <apex:pageBlockSectionItem >
+                    <apex:outputLabel value="{!$ObjectType.TH1__Application_Custom_Settings__c.Fields.TH1__Feature_Collaborate_Active__c.Label}"/>
+                    <apex:outputLabel id="th_check_collaborate_feature" value="{!IF(AppSettings.TH1__Feature_Collaborate_Active__c, 'Licensed', 'Not Licensed')}" />
+                </apex:pageBlockSectionItem>
+                <apex:pageBlockSectionItem >
+                    <apex:outputLabel value="{!$ObjectType.TH1__Application_Custom_Settings__c.Fields.TH1__Feature_Connect_Active__c.Label}"/>
+                    <apex:outputLabel id="th_check_connect_feature" value="{!IF(AppSettings.TH1__Feature_Connect_Active__c, 'Licensed', 'Not Licensed')}" />
+                </apex:pageBlockSectionItem>
+            </apex:pageBlockSection>
+        </apex:pageBlock>
+        <apex:pageBlock title="Email Images">
+            <apex:pageMessages rendered="{!IF(MessageType = 3, true, false)}" />
+            <apex:pageBlockSection collapsible="false">
+                <apex:pageBlockSectionItem >
+                    <apex:outputLabel value="Delete Email Images" />
+                    <apex:outputpanel >
+                        <apex:selectList value="{!PriorToRef}" size="1" id="th_select_delete_email">
+                            <apex:selectOptions id="th_select_prior_to" value="{!PriorToOptions}"/>
+                        </apex:selectList>
+                        <apex:commandButton id="th_btn_delete_email_images" action="{!deleteEmailImages}" value="Delete" style="margin-left:5px;"/>
+                    </apex:outputpanel>
+                </apex:pageBlockSectionItem>
+            </apex:pageBlockSection>
+        </apex:pageBlock>
+        <apex:pageBlock title="Integration" rendered="{!ShowIntegration}" id="th_integration_panel">
+        	<apex:pageMessages rendered="{!IF(MessageType = 4, true, false)}" />
+        	<apex:pageMessage summary="{!IntegrationMessage}" severity="info" strength="2" escape="false" />
+            <apex:pageBlockSection collapsible="false" columns="2">
+            	<input type="button" id="th_btn_integrationuser" class="btn" value="Set Integration User" onclick="configure();"/>
+				<apex:pageBlockSectionItem >
+					<apex:outputLabel value="{!$ObjectType.TH1__Application_Custom_Settings__c.Fields.TH1__Last_Integration_User__c.Label}"/>
+					<apex:outputLink id="th_txt_lastuser" value="/{!AppSettings.TH1__Last_Integration_User__c}">{!IntegrationUserName}</apex:outputLink>
+				</apex:pageBlockSectionItem>
+            </apex:pageBlockSection>
+        </apex:pageBlock>
+        <apex:pageBlock title="Migration" rendered="{!HasMigrationFeature}">
+        	<apex:pageMessage rendered="{!(!HasMigrationPermissions)}" summary="{!NoModifyAllRights}" severity="warning" strength="2" escape="false"/>
+        	<apex:outputPanel rendered="{!HasMigrationPermissions}">
+               	<apex:commandButton id="th_btn_export" value="Export" onclick="exportProject();return false;"/>
+              	<apex:commandButton id="th_btn_import" value="Import" onclick="importProject();return false;" />
+            </apex:outputPanel>
+        </apex:pageBlock>
+        </apex:outputPanel>
+    </apex:form>
+</apex:page>

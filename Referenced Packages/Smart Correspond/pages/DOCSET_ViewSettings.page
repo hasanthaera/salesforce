@@ -1,0 +1,259 @@
+<apex:page standardController="TH1__Document_Setting__c" extensions="TH1.DOCSET_CE_EditSettings" action="{!onload}"
+        sidebar="false"  tabStyle="TH1__Document_Setting__c">
+<c:COMMON_JQueryLib />
+<style>
+.Custom150Tab .tertiaryPalette, .individualPalette .Custom150Block .tertiaryPalette, .layoutEdit .individualPalette .Custom150Block .tertiaryPalette {
+	background-color: gray;
+	border-color: gray;
+}
+.Custom214Tab .tertiaryPalette, .individualPalette .Custom214Block .tertiaryPalette, .layoutEdit .individualPalette .Custom214Block .tertiaryPalette {
+	background-color: gray;
+	border-color: gray;
+}
+</style>
+	<c:COMMON_HelpUtil />
+	<apex:pageMessage summary="{!TemplateDesignerFeatureMessage}" severity="info" strength="3" rendered="{!NOT(TemplateDesignerIsLicensed)}" escape="false" />
+	<apex:form rendered="{!TemplateDesignerIsLicensed}">
+		<apex:inputHidden value="{!TH1__Document_Setting__c.TH1__Primary_Object__c}" />
+		<apex:inputHidden value="{!TH1__Document_Setting__c.TH1__Chatter_group_id__c}" />
+		<apex:inputHidden value="{!TH1__Document_Setting__c.TH1__Thunderhead_channel_type__c}" />
+		<apex:inputHidden value="{!TH1__Document_Setting__c.TH1__Document_Data_Model_Name__c}" />
+		<apex:inputHidden value="{!TH1__Document_Setting__c.TH1__Org_Wide_Email_Address_Id__c}" />
+		<apex:inputHidden value="{!TH1__Document_Setting__c.TH1__Do_Not_Merge_PDFs__c}" />
+		<apex:inputHidden value="{!TH1__Document_Setting__c.TH1__Docusign_email_to_field__c}"/>
+		<apex:sectionHeader title="Document Setting" subtitle="{!TH1__Document_Setting__c.Name}"/>
+		<!-- Replicate SF help for this page link and icon -->
+		<div class="bPageTitle" style="padding:0px;">
+			<div class="ptBody">
+				<c:COMMON_PageHelpLink helpUrlPath="index.htm#DocSettingsPage.htm" showText="true"/>
+			</div>
+		</div>
+		<apex:pageBlock title="Document Setting Detail" mode="maindetail">
+			<apex:pageMessages />
+			<apex:pageBlockButtons >
+				<apex:commandButton id="th_btn_edit" action="{!edit}" value="Edit" rendered="{!AND(primaryObjectExists, RecordAccess.HasEditAccess)}"/>
+				<apex:commandButton id="th_btn_delete" action="{!delete}" value="Delete" rendered="{!RecordAccess.HasDeleteAccess}" disabled="{!DocSettingHasDependency}" title="{!IF(DocSettingHasDependency, 'Document Setting cannot be deleted while associated drafts exist. Please go to Drafts tab and remove any drafts associated with this Document Setting, then try again.', '')}" onclick="if (!window.confirm('Are you sure?')) return false;"/>
+				<apex:commandButton id="th_btn_clone" action="{!cloneObject}" value="Clone" rendered="{!AND(primaryObjectExists, $ObjectType.TH1__Document_Setting__c.Createable)}"/>
+				<apex:commandButton id="th_btn_valid" action="{!validateDocSetting}" value="Validate" rendered="{!AND(primaryObjectExists, RecordAccess.HasEditAccess)}"/>
+				<apex:commandButton id="th_btn_disable" action="{!switchDisable}" value="{!IF(TH1__Document_Setting__c.TH1__Is_disabled__c, 'Enable', 'Disable')}" rendered="{!AND(primaryObjectExists, RecordAccess.HasEditAccess)}"/>
+			</apex:pageBlockButtons>
+			<apex:pageBlockSection title="Information" columns="2" collapsible="false">
+				<apex:outputField id="th_txt_name" value="{!TH1__Document_Setting__c.Name}"/>
+				<apex:pageBlockSectionItem >
+					<apex:outputLabel value="Owner"/>
+					<apex:outputPanel >
+						<apex:outputField value="{!TH1__Document_Setting__c.OwnerId}"/>&nbsp;
+						<apex:outputLink value="/{!TH1__Document_Setting__c.Id}%2Fa?retURL=/apex/{!OrgNamespace}DOCSET_ViewSettings?id={!TH1__Document_Setting__c.Id}" rendered="{!$ObjectType.TH1__Document_Setting__c.Updateable}">[Change]</apex:outputLink>
+					</apex:outputPanel>
+				</apex:pageBlockSectionItem>
+				<apex:outputField id="th_check_disabled" value="{!TH1__Document_Setting__c.TH1__Is_disabled__c}"/>
+				<apex:outputField id="th_txt_description" value="{!TH1__Document_Setting__c.TH1__Description__c}"/>
+           	</apex:pageBlockSection>
+           	<apex:pageBlockSection title="Validation" columns="2" collapsible="false" rendered="{!TH1__Document_Setting__c.TH1__Is_invalid__c}">
+           		<apex:pageBlockSectionItem >
+					<apex:outputLabel value="Validation"/>
+					<apex:image value="{!URLFOR($Resource.TH1__ThunderheadResources, '/images/error.png')}" styleclass="warning_img" title="Validation failed"/>
+				</apex:pageBlockSectionItem>
+				<apex:outputField value="{!TH1__Document_Setting__c.TH1__Validation_date__c}"/>
+				<apex:outputField value="{!TH1__Document_Setting__c.TH1__Validation_error_category__c}"/>
+			</apex:pageBlockSection>
+			<apex:pageBlockSection columns="1" collapsible="false" rendered="{!TH1__Document_Setting__c.TH1__Is_invalid__c}">
+				<apex:outputField value="{!TH1__Document_Setting__c.TH1__Validation_error_message__c}"/>
+           	</apex:pageBlockSection>
+           	<apex:pageBlockSection title="Document Generation" columns="2" collapsible="false">
+				<apex:pageBlockSectionItem >
+					<apex:outputLabel value="{!$ObjectType.TH1__Document_Setting__c.Fields.TH1__Template_name__c.Label}"/>
+					<apex:outputText id="th_txt_templatename" value="{!TH1__Document_Setting__c.TH1__Template_name__c}" />
+				</apex:pageBlockSectionItem>
+  				<apex:outputText id="th_txt_channelname" value="{!TH1__Document_Setting__c.TH1__Thunderhead_channel_name__c}"/>
+  				<apex:pageBlockSectionItem >
+					<apex:outputLabel value="{!$ObjectType.TH1__Document_Setting__c.Fields.TH1__Primary_Object__c.Label}"/>
+					<apex:outputText id="th_txt_primaryobj" value="{!primaryObject}" />
+				</apex:pageBlockSectionItem>
+  				<apex:pageBlockSectionItem >
+					<apex:outputLabel value="Data Model"/>
+					<apex:outputText id="th_txt_datamodel" value="{!TH1__Document_Setting__c.TH1__Document_Data_Model_Name__c}" />
+				</apex:pageBlockSectionItem>
+				<apex:pageBlockSectionItem rendered="{!NOT(ChannelSupportsEmail)}">
+                	<apex:outputLabel value="Show on Screen" />
+                	<apex:image id="th_check_showpdfs" url="{!IF(TH1__Document_Setting__c.TH1__Show_PDF__c, '/img/checkbox_checked.gif', '/img/checkbox_unchecked.gif')}" />
+                </apex:pageBlockSectionItem>
+				<apex:pageBlockSectionItem rendered="{!ChannelSupportsMerge}">
+                	<apex:outputLabel value="Merge PDFs" />
+                	<apex:image id="th_check_mergepdfs" url="{!IF(MergePDFs, '/img/checkbox_checked.gif', '/img/checkbox_unchecked.gif')}" />
+                </apex:pageBlockSectionItem>
+           	</apex:pageBlockSection>
+           	<!-- Widget settings -->
+           	<apex:pageBlockSection title="Widget Settings" columns="2" collapsible="false" id="widget_settings">
+           		<apex:outputField id="th_txt_filterby" value="{!TH1__Document_Setting__c.TH1__Filter_field_name__c}"/>
+            	<apex:outputField id="th_txt_filterfieldvalue" value="{!TH1__Document_Setting__c.TH1__Filter_field_value__c}"/>
+           		<apex:outputField id="th_check_generatedoc" value="{!TH1__Document_Setting__c.TH1__Generate_document__c}" />
+           		<apex:outputField id="th_check_editable" value="{!TH1__Document_Setting__c.TH1__Editable__c}" rendered="{!DraftEditingIsLicensed}"/>
+           		<apex:outputField id="th_check_collaboratedoc" value="{!TH1__Document_Setting__c.TH1__Collaborate_Document__c}" rendered="{!CanCollaborate}"/>
+           	</apex:pageBlockSection>
+           	<!-- Draft Editing -->
+           	<apex:pageBlockSection title="Draft Editor Settings" columns="1" collapsible="false" id="draft_editing" rendered="{!DraftEditingIsLicensed}">
+				<apex:pageBlockSectionItem >
+	           		<apex:outputLabel value="{!$ObjectType.TH1__Document_Setting__c.Fields.TH1__Draft_name__c.Label}"/>
+	           		<apex:outputPanel >
+	           			<apex:outputText id="th_txt_draftname" value="{!TH1__Document_Setting__c.TH1__Draft_name__c}" rendered="{!TH1__Document_Setting__c.TH1__Draft_name_field__c == ''}"/>
+	           			<apex:outputText id="th_txt_draftname_field" value="Dynamic using field: {!TH1__Document_Setting__c.TH1__Draft_name_field__c}" rendered="{!TH1__Document_Setting__c.TH1__Draft_name_field__c != ''}"/>
+	          		</apex:outputPanel>
+          		</apex:pageBlockSectionItem>
+          		<apex:outputField id="th_check_retain" value="{!TH1__Document_Setting__c.TH1__Is_generate_and_retain__c}" />
+				<apex:outputField id="th_check_generatedraft" value="{!TH1__Document_Setting__c.TH1__Generate_draft__c}" />
+				<apex:outputField id="th_check_collaboratedraft" value="{!TH1__Document_Setting__c.TH1__Collaborate_Draft__c}" rendered="{!CanCollaborate}"/>
+           	</apex:pageBlockSection>
+           	<apex:pageBlockSection title="Field Update" columns="2" collapsible="false" id="update_field">
+				<apex:pageBlockSectionItem >
+					<apex:outputLabel value="Field to Update"/>
+					<apex:outputText id="th_txt_fieldtoupdate" value="{!TH1__Document_Setting__c.TH1__Field_to_update_API_name__c}" />
+				</apex:pageBlockSectionItem>
+				<apex:pageBlockSectionItem >
+					<apex:outputLabel value="{!$ObjectType.TH1__Document_Setting__c.Fields.TH1__Field_to_update_value__c.Label}"/>
+					<apex:outputText id="th_txt_fieldupdatevalue" value="{!TH1__Document_Setting__c.TH1__Field_to_update_value__c}" />
+				</apex:pageBlockSectionItem>
+				<apex:outputField id="th_check_fieldtoupdatenotifyerror" value="{!TH1__Document_Setting__c.TH1__Field_to_update_notify_errors__c}" />
+           	</apex:pageBlockSection>
+           	<apex:pageBlockSection title="Storage" columns="1" collapsible="false" rendered="{!ObjectSupportsStorage}">
+           		<apex:outputField id="th_txt_storage" value="{!TH1__Document_Setting__c.TH1__Storage__c}"/>
+           		<apex:pageBlockSectionItem >
+           		<apex:outputLabel value="Storage Filename"/>
+           		<apex:outputPanel >
+           			<apex:outputText id="th_txt_storagefilename" value="{!TH1__Document_Setting__c.TH1__Storage_file_name__c}" rendered="{!TH1__Document_Setting__c.TH1__Storage_file_name_field__c == ''}"/>
+           			<apex:outputText id="th_txt_storagefilename_field" value="Dynamic using field: {!TH1__Document_Setting__c.TH1__Storage_file_name_field__c}" rendered="{!TH1__Document_Setting__c.TH1__Storage_file_name_field__c != ''}"/>
+          		</apex:outputPanel>
+          		</apex:pageBlockSectionItem>
+           	</apex:pageBlockSection>
+           	<!--  Email Section -->
+           	<apex:pageBlockSection title="Email" columns="1" collapsible="false" rendered="{!ChannelSupportsEmail}">
+				<apex:outputField id="th_check_sendemail" value="{!TH1__Document_Setting__c.TH1__Email_enabled__c}"/>
+				<apex:pageBlockSectionItem >
+					<apex:outputLabel value="Email From"/>
+					<apex:outputText id="th_txt_emailfromaddress" value="{!EmailFromAddress}"/>
+	           	</apex:pageBlockSectionItem>
+				<apex:pageBlockSectionItem >
+					<apex:outputLabel value="Email To"/>
+					<apex:outputPanel >
+						<apex:outputText id="th_txt_emailto" value="{!emailToRecipient.TH1__Static_text__c}" rendered="{!AND(TH1__Document_Setting__c.TH1__Email_enabled__c, emailToRecipient.TH1__Field_name__c == '')}" />
+						<apex:outputText id="th_txt_emailto_field" value="Dynamic using field: {!emailToRecipient.TH1__Field_name__c}" rendered="{!AND(TH1__Document_Setting__c.TH1__Email_enabled__c, emailToRecipient.TH1__Field_name__c != '')}" />
+	           		</apex:outputPanel>
+	           	</apex:pageBlockSectionItem>
+				<apex:pageBlockSectionItem >
+					<apex:outputLabel value="Email Cc"/>
+					<apex:outputPanel >
+						<apex:outputText id="th_txt_emailcc" value="{!emailCcRecipient.TH1__Static_text__c}" rendered="{!AND(TH1__Document_Setting__c.TH1__Email_enabled__c, emailCcRecipient.TH1__Field_name__c == '')}" />
+						<apex:outputText id="th_txt_emailcc_field" value="Dynamic using field: {!emailCcRecipient.TH1__Field_name__c}" rendered="{!AND(TH1__Document_Setting__c.TH1__Email_enabled__c, emailCcRecipient.TH1__Field_name__c != '')}" />
+	           		</apex:outputPanel>
+	           	</apex:pageBlockSectionItem>
+				<apex:pageBlockSectionItem >
+					<apex:outputLabel value="Email Bcc"/>
+					<apex:outputPanel >
+					<apex:outputText id="th_txt_emailbcc" value="{!emailBccRecipient.TH1__Static_text__c}" rendered="{!AND(TH1__Document_Setting__c.TH1__Email_enabled__c, emailBccRecipient.TH1__Field_name__c == '')}" />
+					<apex:outputText id="th_txt_emailbcc_field" value="Dynamic using field: {!emailBccRecipient.TH1__Field_name__c}" rendered="{!AND(TH1__Document_Setting__c.TH1__Email_enabled__c, emailBccRecipient.TH1__Field_name__c != '')}" />
+	           		</apex:outputPanel>
+	           	</apex:pageBlockSectionItem>
+	           	<apex:pageBlockSectionItem >
+					<apex:outputLabel value="Email Subject"/>
+					<apex:outputPanel >
+						<apex:outputText id="th_txt_emailsubject" value="{!TH1__Document_Setting__c.TH1__Email_subject__c}" rendered="{!AND(TH1__Document_Setting__c.TH1__Email_enabled__c, TH1__Document_Setting__c.TH1__Email_subject_field__c == '')}" />
+						<apex:outputText id="th_txt_emailsubject_field" value="Dynamic using field: {!TH1__Document_Setting__c.TH1__Email_subject_field__c}" rendered="{!AND(TH1__Document_Setting__c.TH1__Email_enabled__c, TH1__Document_Setting__c.TH1__Email_subject_field__c != '')}" />
+	           		</apex:outputPanel>
+	           	</apex:pageBlockSectionItem>
+	           	<apex:pageBlockSectionItem >
+					<apex:outputLabel value="Document Attachments"/>
+					<apex:outputText id="th_txt_emailattachment" value="{!Attachments}" />
+	           	</apex:pageBlockSectionItem>
+	           	<!-- THIS SECTION SHOULD ONLY BE VISIBLE IF NOTES & ATTACHMENTS ARE AVAILABLE ON THE PRIMARY OBJECT -->
+	           	<apex:outputField id="th_check_dynamicattachmentsenabled" value="{!TH1__Document_Setting__c.TH1__Dynamic_notes_attachments_enabled__c}" rendered="{!ObjectSupportsStorage}"/>
+	           	<apex:pageBlockSectionItem helpText="Name of attachment to search for. Supports a semi-colon separated list, and ?* wildcards." rendered="{!ObjectSupportsStorage}">
+					<apex:outputLabel value="Attachment Name(s)"/>
+					<apex:outputPanel >
+						<apex:outputText id="th_txt_attachmentname" value="{!TH1__Document_Setting__c.TH1__Dynamic_attachment_name__c}" rendered="{!AND(TH1__Document_Setting__c.TH1__Email_enabled__c, TH1__Document_Setting__c.TH1__Dynamic_notes_attachments_enabled__c, TH1__Document_Setting__c.TH1__Dynamic_attachment_name_field__c == '')}" />
+						<apex:outputText id="th_txt_attachmentname_field" value="Dynamic using field: {!TH1__Document_Setting__c.TH1__Dynamic_attachment_name_field__c}" rendered="{!AND(TH1__Document_Setting__c.TH1__Email_enabled__c, TH1__Document_Setting__c.TH1__Dynamic_notes_attachments_enabled__c, TH1__Document_Setting__c.TH1__Dynamic_attachment_name_field__c != '')}" />
+	           		</apex:outputPanel>
+	           	</apex:pageBlockSectionItem>
+	           	<apex:outputField id="th_txt_nodocsaction" value="{!TH1__Document_Setting__c.TH1__No_docs_action__c}" rendered="{!ObjectSupportsStorage}"/>
+	           	<apex:outputField id="th_txt_manydocsaction" value="{!TH1__Document_Setting__c.TH1__Multiple_docs_action__c}" rendered="{!ObjectSupportsStorage}"/>
+	           	<!--  END SECTION  -->
+           	</apex:pageBlockSection>
+           	<!-- Chatter Section -->
+           	<apex:pageBlockSection title="Chatter" columns="2" collapsible="false" rendered="{!OrgIsChatterEnabled}">
+				<apex:outputField id="th_check_posttochatter" value="{!TH1__Document_Setting__c.TH1__Chatter_enabled__c}"/>
+				<apex:outputField id="th_txt_chatterfeed" value="{!TH1__Document_Setting__c.TH1__Chatter_feed__c}"/>
+				<apex:outputField id="th_txt_chatterposttype" value="{!TH1__Document_Setting__c.TH1__Chatter_post_type__c}"/>
+				<apex:pageBlockSectionItem >
+					<apex:outputLabel value="{!$ObjectType.TH1__Document_Setting__c.Fields.TH1__Chatter_group_id__c.Label}"/>
+					<apex:outputText id="th_txt_chattergroup" value="{!chatterGroupName}" />
+				</apex:pageBlockSectionItem>
+				<apex:pageBlockSectionItem >
+					<apex:outputLabel value="Chatter Filename"/>
+					<apex:outputPanel >
+						<apex:outputText id="th_txt_chatterfilename" value="{!TH1__Document_Setting__c.TH1__Chatter_file_name__c}" rendered="{!TH1__Document_Setting__c.TH1__Chatter_file_name_field__c == ''}"/>
+						<apex:outputText id="th_txt_chatterfilename_dynamic" value="Dynamic using field: {!TH1__Document_Setting__c.TH1__Chatter_file_name_field__c}" rendered="{!TH1__Document_Setting__c.TH1__Chatter_file_name_field__c != ''}"/>
+					</apex:outputPanel>
+				</apex:pageBlockSectionItem>
+				<apex:pageBlockSectionItem >
+					<apex:outputLabel value="Chatter Text"/>
+					<apex:outputPanel >
+						<apex:outputText id="th_txt_chattertext" value="{!TH1__Document_Setting__c.TH1__Chatter_text__c}" rendered="{!TH1__Document_Setting__c.TH1__Chatter_text_field__c == ''}"/>
+						<apex:outputText id="th_txt_chattertext_dynamic" value="Dynamic using field: {!TH1__Document_Setting__c.TH1__Chatter_text_field__c}" rendered="{!TH1__Document_Setting__c.TH1__Chatter_text_field__c != ''}"/>
+           			</apex:outputPanel>
+           		</apex:pageBlockSectionItem>
+           	</apex:pageBlockSection>
+           	<!-- Docusign Section -->
+           	<apex:pageBlockSection title="DocuSign" columns="2" collapsible="false" rendered="{!AND(ESignatureFunctionalityIsLicensed, OR(TH1__Document_Setting__c.TH1__Docusign_enabled__c, AND(appSettings.TH1__Docusign_Enabled__c, NOT(ChannelSupportsEmail))))}">
+				<apex:outputField id="th_check_docusignenabled" value="{!TH1__Document_Setting__c.TH1__Docusign_enabled__c}"/>
+                <apex:outputField id="th_check_docusignautosend" value="{!TH1__Document_Setting__c.TH1__DocuSign_Auto_Send__c}"/>
+                <apex:outputField id="th_check_docusignsendersig" value="{!TH1__Document_Setting__c.TH1__DocuSign_Sender_Signature_Order__c}"/>
+                <apex:outputField id="th_txt_docusignenvelope" value="{!TH1__Document_Setting__c.TH1__Docusign_envelope_id_field__c}"/>
+                <apex:pageBlockSectionItem >
+                    <apex:outputLabel value="DocuSign Recipient"/>
+                    <apex:outputText id="th_txt_docusignemailtofield" value="{!DocuSignRecipient}"/>
+                </apex:pageBlockSectionItem>
+                <apex:outputField id="th_txt_docusignemailsubject" value="{!TH1__Document_Setting__c.TH1__Docusign_email_subject__c}" styleclass="th-textbox"/>
+                <apex:outputField id="th_txt_docusignemailbody" value="{!TH1__Document_Setting__c.TH1__Docusign_Email_Body__c}" styleclass="th-textbox docusignbody"/>
+           	</apex:pageBlockSection>
+           	<!-- EchoSign Section -->
+           	<apex:pageBlockSection title="EchoSign" columns="2" collapsible="false" rendered="{!ShowEchosign}">
+				<apex:outputField id="th_check_echosignnenabled" value="{!TH1__Document_Setting__c.TH1__Echosign_Enabled__c}"/>
+				<apex:outputText value="{!TH1__Document_Setting__c.TH1__Echosign_template_id__c}" rendered="false"/>
+				<apex:pageBlockSectionItem >
+					<apex:outputLabel value="EchoSign Agreement Template"/>
+					<apex:outputText id="th_txt_echosigntemplatename" value="{!echosignTemplateName}"/>
+				</apex:pageBlockSectionItem>
+           	</apex:pageBlockSection>
+           	<!-- Pre-generate validation section -->
+           	<apex:pageBlockSection title="Pre-Generation Validation" columns="1" collapsible="false">
+           		<apex:outputField id="th_txt_pregen_validate_field" value="{!TH1__Document_Setting__c.TH1__Pregenerate_validation_field__c}"/>
+           	</apex:pageBlockSection>
+           	<!-- Post-generate redirection section -->
+           	<apex:pageBlockSection title="Post-Generation" columns="1" collapsible="false">
+           		<apex:pageBlockSectionItem >
+           		<apex:outputLabel value="Return To Url"/>
+           		<apex:outputPanel >
+           			<apex:outputText id="th_txt_postgen_redirection" value="{!TH1__Document_Setting__c.TH1__Postgenerate_Redirection_Url__c}" rendered="{!TH1__Document_Setting__c.TH1__Postgenerate_Redirection_Url_Field__c == ''}"/>
+           			<apex:outputText id="th_txt_postgen_redirection_field" value="Dynamic using field: {!TH1__Document_Setting__c.TH1__Postgenerate_Redirection_Url_Field__c}" rendered="{!TH1__Document_Setting__c.TH1__Postgenerate_Redirection_Url_Field__c != ''}"/>
+          		</apex:outputPanel>
+          		</apex:pageBlockSectionItem>
+           	</apex:pageBlockSection>
+            <!-- History Section -->
+           	<apex:pageBlockSection title="History" columns="2" collapsible="false">
+				<apex:pageBlockSectionItem >
+                    <apex:outputLabel value="Created By" for="created_by"/>
+                    <apex:outputPanel >
+                        <apex:outputField id="created_by" value="{!TH1__Document_Setting__c.CreatedById}"/>,&nbsp;
+                        <apex:outputField value="{!TH1__Document_Setting__c.CreatedDate}"/>
+                    </apex:outputPanel>
+                </apex:pageBlockSectionItem>
+                <apex:pageBlockSectionItem >
+                    <apex:outputLabel value="Last Modified By" for="modified_by"/>
+                    <apex:outputPanel >
+                        <apex:outputField id="modified_by" value="{!TH1__Document_Setting__c.LastModifiedById}"/>,&nbsp;
+                        <apex:outputField value="{!TH1__Document_Setting__c.LastModifiedDate}"/>
+                    </apex:outputPanel>
+                </apex:pageBlockSectionItem>
+           	</apex:pageBlockSection>
+		</apex:pageBlock>
+	</apex:form>
+</apex:page>

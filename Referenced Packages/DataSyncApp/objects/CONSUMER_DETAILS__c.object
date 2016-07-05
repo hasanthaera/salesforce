@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomObject xmlns="http://soap.sforce.com/2006/04/metadata">
+    <customSettingsType>List</customSettingsType>
+    <description>Consumer details for Data Refresh tool Heroku app.</description>
+    <enableFeeds>false</enableFeeds>
+    <fields>
+        <fullName>CALLBACK_URL__c</fullName>
+        <deprecated>false</deprecated>
+        <description>Callback url for Data Refresh Heroku app.</description>
+        <externalId>false</externalId>
+        <label>CALLBACK_URL</label>
+        <length>255</length>
+        <required>true</required>
+        <trackTrending>false</trackTrending>
+        <type>Text</type>
+        <unique>false</unique>
+    </fields>
+    <fields>
+        <fullName>CONSUMER_KEY__c</fullName>
+        <deprecated>false</deprecated>
+        <description>Consumer Key for Data Refresh Tool Heroku app.</description>
+        <externalId>false</externalId>
+        <label>CONSUMER_KEY</label>
+        <length>255</length>
+        <required>true</required>
+        <trackTrending>false</trackTrending>
+        <type>Text</type>
+        <unique>false</unique>
+    </fields>
+    <fields>
+        <fullName>CONSUMER_SECRET__c</fullName>
+        <deprecated>false</deprecated>
+        <description>Consumer Secret for Data Refresh Tool Heroku app.</description>
+        <externalId>false</externalId>
+        <label>CONSUMER_SECRET</label>
+        <length>255</length>
+        <required>true</required>
+        <trackTrending>false</trackTrending>
+        <type>Text</type>
+        <unique>false</unique>
+    </fields>
+    <label>CONSUMER_DETAILS</label>
+    <visibility>Public</visibility>
+</CustomObject>

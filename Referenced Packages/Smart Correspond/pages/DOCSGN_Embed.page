@@ -1,0 +1,26 @@
+<apex:page sidebar="false" controller="TH1.DOCSGN_CO_Embed">
+<script type='text/javascript' src='{!URLFOR($Resource.ThunderheadResources, "scripts/ResizeUtil.js")}'>
+</script>
+<script type="text/javascript">
+var resizeUtil;
+window.onload = function() {
+	resizeUtil = new Thunderhead.SF.ResizeUtility(
+		'ds_iframe',
+		Thunderhead.SF.ResizeUtility.prototype.DEFAULT_FOOTER_HEIGHT
+	); 
+	
+	//Resize DocuSign Viewer
+	resizeUtil.resizeElement();
+	window.onresize = function() {
+		resizeUtil.resizeElement();
+	}
+}
+</script>
+<style>
+iFrame{
+	width: 100%;
+	border: none;
+}
+</style>
+<apex:iframe id="ds_iframe" src="{!validatedURL}"/>
+</apex:page>

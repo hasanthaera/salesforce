@@ -1,0 +1,47 @@
+<apex:page showHeader="true" standardController="ApexEmployee__c" tabStyle="ApexEmployee__c" extensions="ApexEmployeeController">
+<apex:image url="{!$Resource.image1}" width="50" height="50"/>        
+   <apex:form >
+     
+    <apex:pageBlock title="{!ApexEmployee__c.name}" id="apEmp">
+     <apex:pageMessages id="messages" /> 
+        <apex:pageBlockSection columns="2">
+            <apex:outputText value="{!ApexEmployee__c.Employee_Name__c}"/>
+            <apex:outputText value="{!ApexEmployee__c.Age__c}"/>            
+            <apex:inputField value="{!ApexEmployee__c.Salary_per_Day__c}"/>
+            <apex:inputField value="{!ApexEmployee__c.Number_of_Days__c}"/>
+            <apex:inputField value="{!ApexEmployee__c.Bonus__c}"/>
+            <apex:outputText label="Net Salary" value="{!netSalary}"/>
+         
+
+
+            </apex:pageBlockSection> 
+                <apex:commandButton action="{!netSalary}" value="Calculate Net Salary" rerender="apEmp" status="counterStatus">
+                 <apex:message /> 
+                </apex:commandButton>
+                <apex:actionStatus id="counterStatus" 
+                           startText=" (incrementing...)" 
+                           stopText=" (done)"/>
+                           
+             <apex:pageBlockButtons >
+               
+                
+             </apex:pageBlockButtons>
+    </apex:pageBlock>
+    
+    <apex:pageBlock id="apBon">
+    <apex:pageMessages id="msg" /> 
+        <apex:pageBlockSection columns="1">
+         <apex:commandButton action="{!calculateBonus}" value="Calculate Bonus"  rerender="apBon" status="bonusStat">
+          <apex:message /> 
+          </apex:commandButton>
+          <apex:actionStatus id="bonusStat" 
+                           startText=" (incrementing...)" 
+                           stopText=" (done)"/>
+            <apex:outputText label="Bonus" value="{!bonus}"/>
+            <apex:outputText label="Total Salary" value="{!totalSalary}"/>
+            
+            
+        </apex:pageBlockSection> 
+    </apex:pageBlock>
+ </apex:form> 
+</apex:page>

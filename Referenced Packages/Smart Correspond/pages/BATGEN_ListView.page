@@ -1,0 +1,120 @@
+<apex:page controller="TH1.BATGEN_CO_ListView" sidebar="false" action="{!onload}" tabStyle="Bulk_Generation__tab">
+    <script>
+        var userCanAbort = {!UserCanAbort};
+        function confirmCanAbort() {
+            if (!userCanAbort) {
+                alert('Only users with the Salesforce system permission \'ModifyAllData\' can abort bulk jobs');
+                return false;
+            }
+            return true;
+        }
+    </script>
+	<apex:form >
+		<apex:sectionHeader title="Bulk Generation" />
+		<apex:pageMessages id="msg" />
+		<apex:pageMessage summary="{!BulkFeatureMessage}" severity="info" strength="3" rendered="{!NOT(BulkGenerationIsLicensed)}" escape="false" />
+		<apex:outputPanel id="select_panel">
+			<table style="width:100%">
+				<tr>
+			    	<td class="select_label"><apex:outputLabel value="Primary Object: " styleClass="listViewLabel"/></td>
+			    	<td>
+				    	<apex:selectList id="th_select_object" value="{!SelectedObject}" size="1" style="width:400px;" disabled="{!NOT(BulkGenerationIsLicensed)}">
+				         	<apex:selectOptions value="{!Objects}"/>
+				         	<apex:actionSupport event="onchange"  action="{!objectChanged}"  rerender="select_panel,listview,msg" />
+				     	</apex:selectList>
+				    </td>
+				    <td>
+				    	<div class="bPageTitle" style="padding:0px;">
+							<div class="ptBody">
+								<c:COMMON_PageHelpLink helpUrlPath="BulkGenerationPage.htm" showText="true"/>
+							</div>
+						</div>
+				    </td>
+		     	</tr>
+				<tr>
+			    	<td><apex:outputLabel value="Object View: " styleClass="listViewLabel"/></td>
+			    	<td>
+				    	<apex:selectList id="th_select_view" value="{!SelectedView}" size="1" style="width:400px;" disabled="{!SelectedObject=null}">
+				         	<apex:selectOptions value="{!Views}" />
+				         	<apex:actionSupport event="onchange"  action="{!viewChanged}"  rerender="select_panel,listview,msg" />
+				     	</apex:selectList>
+				     </td>
+		     	</tr>
+		     	<tr>
+			    	<td><apex:outputLabel value="Document Setting: " styleClass="listViewLabel"/></td>
+			    	<td>
+				    	<apex:selectList id="th_select_docsetting" value="{!SelectedDocSetting}" size="1" style="width:400px;" disabled="{!SelectedObject=null}">
+				         	<apex:selectOptions value="{!DocSettings}" />
+				         	<apex:actionSupport event="onchange" rerender="th_btn_generate" />
+				     	</apex:selectList>
+				    </td>
+		     	</tr>
+		     	<tr>
+			    	<td><apex:outputLabel value="Stop on Error: " styleClass="listViewLabel"/></td>
+			    	<td>
+				    	<apex:inputCheckbox id="th_check_fail_on_error" value="{!FailOnError}" disabled="{!NOT(BulkGenerationIsLicensed)}" onclick="return confirmCanAbort()"/>
+				    </td>
+		     	</tr>
+		     	<tr>
+			    	<td style="height:30px"><apex:outputLabel value="Total records: " styleClass="listViewLabel" rendered="{!AND(SelectedObject!=null, SelectedView!=null)}"/></td>
+			    	<td>
+				    	<apex:outputText id="th_label_record_count" value="{!NumberOfRecords}" rendered="{!AND(SelectedObject!=null, SelectedView!=null)}"/>
+				    </td>
+		     	</tr>
+	     	</table>	     	
+		</apex:outputPanel>
+	 	<apex:pageBlock id="listview">	 		
+	 		<apex:pageBlockButtons location="top">
+	 			<apex:commandButton id="th_btn_generate" action="{!generate}" value="Generate" disabled="{!OR(SelectedObject==null, SelectedView=null, SelectedDocSetting==null, NumberOfRecords==null, NumberOfRecords=='0')}" />
+	 		</apex:pageBlockButtons>
+	        <apex:pageBlockTable value="{!Records}" var="record" rendered="{!Controller!=null}">
+	            <apex:column >
+	            	<apex:facet name="header">
+                        <apex:outputText value="{!$ObjectType[SelectedObject].fields[ObjectNameFieldName].Label}"/>
+                    </apex:facet>
+                    <apex:outputText value="{!record.Name}"/>
+	            </apex:column>
+	        </apex:pageBlockTable>
+	        <apex:outputPanel rendered="{!AND(BulkGenerationIsLicensed, OR(Controller==null, SelectedView==null, Controller.ResultSize=0))}">
+				<apex:outputText value="no records to display"/>
+			</apex:outputPanel>     
+	        <apex:toolbar styleClass="pagingToolBar" rendered="{!AND(Controller!=null, SelectedView!=null, Controller.ResultSize>10)}">
+				<apex:toolbarGroup itemSeparator="none" location="left">
+					<apex:outputPanel >
+						<apex:outputText >Display </apex:outputText>
+						<apex:selectList id="th_select_rows_per_page" value="{!rowsPerPage}" size="1">
+							<apex:selectOptions value="{!rowsPerPageOptionList}"/>
+							<apex:actionSupport event="onchange" action="{!viewChanged}" reRender="listview"/>
+						</apex:selectList>
+						<apex:outputText > records per page</apex:outputText>
+					</apex:outputPanel>
+				</apex:toolbarGroup>
+				<apex:toolbarGroup itemSeparator="none" location="right">
+					<apex:commandLink id="th_btn_previous" value="<Previous page" action="{!Controller.previous}"  rendered="{!Controller.hasPrevious}" reRender="listview"/>
+					<apex:commandLink id="th_btn_next" value="Next page>" action="{!Controller.next}" rendered="{!Controller.hasNext}" reRender="listview"/>
+				</apex:toolbarGroup>
+			</apex:toolbar>			       
+    	</apex:pageBlock>
+	</apex:form>
+	<c:COMMON_HelpUtil />
+	<style>
+		.pagingToolBar {
+			background-color: #F3F3EC;
+			background-image: none;
+			border: none;
+		}
+		.listViewLabel {
+			font-weight: bold;
+			margin-left: 20px;
+			padding-top: 50px;
+		}
+		.select_label{
+			padding-bottom: 5px;
+			min-width: 140px;
+			width: 140px;
+		}
+		.warning_img{
+			margin-left: 10px;
+		}
+	</style>
+</apex:page>

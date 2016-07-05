@@ -1,0 +1,3 @@
+<apex:page controller="TH1.DRAFTS_CO_DraftsList" action="{!onload}" sidebar="false" tabStyle="Drafts__tab">
+    <c:DRAFTS_DraftsList isInline="false" />
+</apex:page>

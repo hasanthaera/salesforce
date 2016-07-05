@@ -1,0 +1,29 @@
+<apex:page controller="TH1.DOCGEN_CO_GenerateDocument" showHeader="{!DisplayHeader}" sidebar="false" action="{!onload}">
+    <c:DOCGEN_DocumentGenerator />
+    <c:DOCGEN_PreviewControl />
+    <c:DOCGEN_DocusignControl />
+    <c:LoadJS module="docgen/echosign" />
+    <script>
+    $(function(){
+        Thunderhead.SF.require('browser', 'docgen/docgen', 'document-processor', 'ui/job-messages')
+                .done(function(Browser, DocumentGenerator, DocumentProcessor, JobMessages) {
+			var urlParams = Browser.getUrlParams();
+			if (DocumentProcessor.isGenerated(urlParams.genId)) {
+                return  DocumentGenerator.returnToRecord();
+			}
+			var isServiceConsole = urlParams.console === 'true';
+			var generationContext = {
+			   action: urlParams.action,
+			   docSettingId: urlParams.docSettingId,
+			   objectId: urlParams.objectId,
+			   isServiceConsole: isServiceConsole,
+			   consoleTabId: urlParams.consoleTabId ?  urlParams.consoleTabId : ''
+			}
+			JobMessages.on('MESSAGES_CONTINUE', DocumentGenerator.processPackage);
+			JobMessages.on('MESSAGES_BACK', DocumentGenerator.returnToRecord);
+			DocumentProcessor.on('COMPLETE', DocumentGenerator.completeGeneration);
+			DocumentGenerator.init(generationContext);
+        });
+	});
+    </script>
+</apex:page>

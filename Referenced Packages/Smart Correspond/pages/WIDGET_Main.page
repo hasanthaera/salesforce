@@ -1,0 +1,3 @@
+<apex:page controller="TH1.WIDGET_CO_Main" action="{!onload}" showHeader="false" sidebar="false" > 
+    <c:GLOBAL_Widget />
+</apex:page>

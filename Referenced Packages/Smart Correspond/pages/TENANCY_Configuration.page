@@ -1,0 +1,128 @@
+<apex:page controller="TH1.TENANCY_CO_Configuration" action="{!onload}" sidebar="false" tabStyle="Dashboard__tab">
+	<apex:outputPanel rendered="{!ShowForm}">
+		<c:COMMON_JQueryLib />
+		<script type="text/javascript" src="{!URLFOR($Resource.ThunderheadResources, 'scripts/formValidationUtil.js')}"></script>   
+		<script type="text/javascript">
+	    (function() {
+            function init() {
+	            FormValidationUtil.addDefaultRequiredIndicator('.requiredIndicator');
+	        }
+	        $(init)
+	    })(this)
+	    </script>
+	    <style>
+	        .tenancy-fields td {
+	            padding-right: 1em;
+	        }
+	        .th-textbox-appsettings {
+	            width : 300px;
+	        }
+        </style>
+		<apex:form >
+			<apex:sectionHeader subtitle="{!JSENCODE($Setup.Application_Custom_Settings__c.Application_Name__c)} for Salesforce" />
+			<apex:pageMessages />
+			<apex:pageBlock >
+				<apex:pageBlockSection columns="1" collapsible="false">
+					<apex:pageBlockSectionItem >
+						<apex:outputPanel >
+							<div style="margin: 1em 0">Enter the details below from the email you received from Thunderhead support and click 'Initialize', otherwise contact <a href="mailto:support@Thunderhead.com" style="margin:0px;font-size:100%;">Customer Success Support</a> for assistance.</div>
+							<table class="tenancy-fields">
+								<tr>
+									<td>Server</td>
+									<td><apex:inputText styleClass="th-textbox-appsettings requiredIndicator" value="{!FormController.ThinstanceId}" /></td>
+								</tr>
+								<tr>
+									<td>Access Key</td>
+									<td><apex:inputText styleClass="th-textbox-appsettings requiredIndicator" value="{!FormController.AccessKey}" /></td>
+								</tr>
+								<tr>
+									<td>Secret</td>
+									<td><apex:inputText styleClass="th-textbox-appsettings requiredIndicator" value="{!FormController.Secret}" /></td>
+								</tr>
+							</table>
+						</apex:outputPanel>
+					</apex:pageBlockSectionItem>
+					<apex:pageBlockSectionItem >
+						<apex:outputPanel >
+							<apex:inputCheckbox value="{!FormController.InstallSample}"/>
+                            Install the 'Sample Letter' example on the Salesforce Account object?
+                    </apex:outputPanel>
+					</apex:pageBlockSectionItem>
+					<apex:pageBlockSectionItem >
+						<apex:commandButton value="Initialize" action="{!install}" />
+					</apex:pageBlockSectionItem>
+				</apex:pageBlockSection>
+			</apex:pageBlock>
+		</apex:form>
+	</apex:outputPanel>
+
+	<apex:outputPanel rendered="{!ShowStatusMessage}">
+		<c:COMMON_JQueryLib />
+		<!-- TODO:pjfh remove all JS -->
+		<script type="text/javascript">
+	    (function() {
+	        var th = this.th = this.th || {}
+	        var module = {}  
+			var log 
+			if (typeof console == "object") {
+			    log = function() {
+			        var args = Array.prototype.slice.call(arguments)
+			        console.log.apply(console, args)
+			    }
+			} else {
+			    log = function() {}
+			}
+	  
+			module.onsubmit = function() {
+			      log('polling...')
+			}
+			 
+			module.oncomplete = function(created) {
+			    log('..poll complete') 
+			    if (created) {
+			        window.location.replace("{!URLENCODE(HelpURL)}") 
+			        log('created')
+			    }
+			}
+			th.TenantStatusPoll = module; 	  
+	    })();
+        </script>
+        <style> 
+            .message-wrap a {
+               font-weight: bold;
+            }
+            .message-wrap .message-info  {
+                margin-top: 1em;
+                margin-left: 1em;
+            }
+            .message-wrap .message-info td {
+                padding-right: 2em;
+            }
+            
+            .message-wrap .summary {
+                font-weight: bold;
+                font-size: 1.4em;
+            }
+            .message-wrap .detail a {
+                margin: 0px;
+            } 
+            .message-wrap .app-settings-link {
+                margin-top: 1em;
+            }
+        </style>
+
+		<apex:outputPanel id="message" styleClass="message-wrap"
+			style="{!MessageController.MessageStyle}">
+			<apex:pageMessage summary="{!MessageController.SummaryMessage}"
+				detail="{!MessageController.DetailMessage}" escape="false"
+				severity="{!MessageController.Severity}" strength="3" />
+		</apex:outputPanel>
+		<apex:form >
+			<apex:actionPoller action="{!pollAction}" rerender="message"
+				interval="10" enabled="{!MessageController.PollEnabled}"
+				onsubmit="th.TenantStatusPoll.onsubmit()"
+				oncomplete="th.TenantStatusPoll.oncomplete({!ShowHelp})" />
+		</apex:form>
+
+	</apex:outputPanel>
+</apex:page>
